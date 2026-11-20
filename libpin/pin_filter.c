@@ -53,8 +53,9 @@
  * push/pop a slot in lock-step with the filter's own frame stack;
  * pin_filter_set_cur_node fills in the real node id once pin_parse has
  * created (or reused) it, which happens slightly after the filter's own
- * open event fires.  A slot left null_atom (e.g. inside a discard frame,
- * where no tree node is ever created) simply yields "not found" lookups.
+ * open event fires.  Every input element has a node, discarded or not;
+ * a slot left null_atom (an element opened only in the output) simply
+ * yields "not found" lookups.
  */
 struct xo_filter_data_s {
     pin_workspace_t *xfd_workspace; /* namepool and mmap backing */

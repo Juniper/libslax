@@ -122,6 +122,12 @@ pin_parse (pin_parse_t *parsep);
 void
 pin_parse_dump (pin_parse_t *parsep);
 
+/*
+ * The most nodes the store held at once during the parse.
+ */
+uint32_t
+pin_parse_store_high_water (pin_parse_t *parsep);
+
 void
 pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque);
 

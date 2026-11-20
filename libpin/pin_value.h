@@ -114,6 +114,7 @@ typedef struct pin_ns_entry_s {
     uint32_t *pne_nodes;    /* heap-allocated array of pin_node_id pv_atom values */
     uint32_t  pne_count;    /* nodes used */
     uint32_t  pne_size;      /* allocated capacity */
+    uint32_t  pne_freed;    /* Freed, but below a slot still in use */
 } pin_ns_entry_t;
 
 /*

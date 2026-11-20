@@ -154,7 +154,7 @@ pin_op_emit_open (PIN_OP_FUNC_ARGS)
     const char *astr = pin_namepool_string(pwp, opp->po_name2);
     char *attribs = astr ? strdup(astr) : NULL;
     pin_insert_t *pip = parsep->pp_insert;
-    pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+    pin_action_type_t act = pin_insert_top_frame(pip)->ps_action;
     if (attribs || opp->po_count)
 	act = PIA_SAVE_ATTRIB;
     pin_insert_open(parsep, opp->po_name, NULL, tag, attribs, act);
@@ -215,7 +215,7 @@ pin_op_element_open (PIN_OP_FUNC_ARGS)
 
     const char *astr = pin_namepool_string(pwp, opp->po_name2);
     char *attribs = astr ? strdup(astr) : NULL;
-    pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+    pin_action_type_t act = pin_insert_top_frame(pip)->ps_action;
     if (attribs)
         act = PIA_SAVE_ATTRIB;
     pin_insert_open(parsep, tag_id, NULL, tag, attribs, act);
@@ -254,7 +254,7 @@ pin_op_copy_open (PIN_OP_FUNC_ARGS)
         return pin_value_null();
 
     pin_insert_t *pip = parsep->pp_insert;
-    pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+    pin_action_type_t act = pin_insert_top_frame(pip)->ps_action;
     pin_insert_open(parsep, ctx_node->pn_name, NULL, tag, NULL, act);
     return pin_value_null();
 }
@@ -1306,8 +1306,7 @@ pin_op_apply (PIN_OP_FUNC_ARGS)
 }
 
 /*
- * Recursively emit one node and its full subtree to the output stream as new
- * non-transient nodes.  Children are walked via pin_node_child + pn_next
+ * Recursively emit one node and its full subtree to the output stream.  Children are walked via pin_node_child + pn_next
  * (sibling chain), never pn_next of the root, which links to siblings.
  */
 void
@@ -1348,7 +1347,7 @@ pin_exec_emit_node (pin_parse_t *parsep, pin_workspace_t *pwp,
         }
 
         char *attribs = apos > 0 ? strndup(abuf, apos) : NULL;
-        pin_action_type_t act = pip->pin_stack[pip->pin_depth].ps_action;
+        pin_action_type_t act = pin_insert_top_frame(pip)->ps_action;
         if (attribs)
             act = PIA_SAVE_ATTRIB;
         pin_insert_open(parsep, nodep->pn_name, NULL, tag, attribs, act);
@@ -2050,6 +2049,7 @@ pin_exec_nodeset_alloc (pin_exec_state_t *esp)
 	esp->pes_nodeset_size = newsize;
     }
 
+    esp->pes_nodesets[esp->pes_nodeset_count].pne_freed = 0;
     return esp->pes_nodeset_count++;
 }
 
@@ -2065,6 +2065,16 @@ pin_exec_nodeset_free (pin_exec_state_t *esp, uint32_t idx)
     nsp->pne_nodes = NULL;
     nsp->pne_count = 0;
     nsp->pne_size = 0;
+    nsp->pne_freed = 1;
+
+    /*
+     * Slots are used like a stack, so a temporary is usually the top
+     * one when it's freed.  Give back the top slot, and any freed
+     * slots it was hiding, so the next allocation reuses them.
+     */
+    while (esp->pes_nodeset_count > 0
+	       && esp->pes_nodesets[esp->pes_nodeset_count - 1].pne_freed)
+	esp->pes_nodeset_count -= 1;
 }
 
 int

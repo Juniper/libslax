@@ -62,6 +62,7 @@ pin_tree_append_child (pin_workspace_t *pwp,
 
     /* New node is always the last child: its pn_next points up to parent */
     newp->pn_next = parent_atom;
+    newp->pn_parent = parent_atom;
 
     if (parentp->pn_contents == PA_NULL_ATOM) {
 	/* No children yet -- new node is the first and last */

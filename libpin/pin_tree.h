@@ -57,25 +57,42 @@ typedef struct pin_istack_s {
     pin_rstate_t *ps_statep;	/* Current parser state */
     pin_name_id_t ps_old_name;	/* Old (original) name atom; for use-tag="x" */
     pin_op_id_t ps_close_ops;	/* Op sequence to run when this element closes */
-    int ps_context_retain;	/* Non-zero: new children are marked PNF_TRANSIENT */
+    int ps_context_retain;	/* Non-zero: children are kept as op context */
     unsigned ps_emit;		/* Output state of this frame (PSE_*) */
+    pin_depth_t ps_idepth;	/* Output frame: input depth when opened */
+    pin_node_id_t ps_prev_atom;	/* Parent's last child before us (atom) */
+    pin_node_t *ps_prev_node;	/* Parent's last child before us (pointer) */
+    pin_boolean_t ps_hold;	/* Read after it closes; freed as a whole */
+    pin_boolean_t ps_keep_below; /* Something below us stays in the store */
+    pin_boolean_t ps_scratch;	/* Not part of the result, even with no output */
 } pin_istack_t;
 
 /* Flags for ps_emit */
 #define PSE_CONTENT	(1<<0)	/* Content of this frame goes to the output */
 #define PSE_OPEN	(1<<1)	/* The output has an open element for us */
-#define PSE_ONLY	(1<<2)	/* Output only: no node in the store */
 
 /*
  * An insertion point is all the information we need to add a node to
  * some sort of output tree.
+ *
+ * pin_stack holds one frame per open input element, so pin_depth is
+ * the input depth.  pin_ostack holds the open output elements, which
+ * have no node in the store.  The two nest strictly, so the innermost
+ * open element is the top output frame if it was opened at the
+ * current input depth, and the top input frame otherwise.
  */
 typedef struct pin_insert_s {
     pin_tree_t *pin_tree;		/* Tree we are inserted into */
-    pin_depth_t pin_depth;	/* Current depth in hierarchy */
+    pin_depth_t pin_depth;	/* Current input depth */
+    pin_depth_t pin_odepth;	/* Current output depth */
     pin_depth_t pin_maxdepth;	/* Maximum depth seen */
     unsigned pin_relation;	/* How to handle the next insertion */
-    pin_istack_t pin_stack[PIN_DEPTH_MAX]; /* Insertion points */
+    pin_node_id_t pin_prev_atom; /* Last child before the newest (atom) */
+    pin_node_t *pin_prev_node;	/* Last child before the newest (pointer) */
+    uint32_t pin_live;		/* Nodes now in the store */
+    uint32_t pin_live_max;	/* Most nodes seen in the store at once */
+    pin_istack_t pin_stack[PIN_DEPTH_MAX]; /* Input elements */
+    pin_istack_t pin_ostack[PIN_DEPTH_MAX]; /* Output elements */
     pin_body_exec_t pin_body;	/* Body FSM execution state */
 } pin_insert_t;
 
@@ -84,35 +101,53 @@ typedef struct pin_insert_s {
 #define PIR_CHILD	2	/* Insert as child */
 
 /*
- * The frame that new store nodes go under: the top frame, or, if that
- * is output only (PSE_ONLY), the nearest frame below it with a node.
- * Input kept inside output-only elements is stored under its nearest
- * stored ancestor.  The root frame always has a node.
+ * True if the innermost open element is an output element.
  */
-static inline pin_istack_t *
-pin_insert_store_frame (pin_insert_t *pip)
+static inline pin_boolean_t
+pin_insert_top_is_output (pin_insert_t *pip)
 {
-    pin_depth_t depth = pip->pin_depth;
-
-    while (depth > 0 && (pip->pin_stack[depth].ps_emit & PSE_ONLY))
-	depth -= 1;
-
-    return &pip->pin_stack[depth];
+    return (pip->pin_odepth > 0
+	    && pip->pin_ostack[pip->pin_odepth].ps_idepth == pip->pin_depth);
 }
 
 /*
- * The name of the element on top of the stack: its node's name, or,
- * for an output-only frame, the name it was opened with.
+ * The frame of the innermost open element, input or output.  Content
+ * (text, attributes, child elements) is placed relative to it.
+ */
+static inline pin_istack_t *
+pin_insert_top_frame (pin_insert_t *pip)
+{
+    if (pin_insert_top_is_output(pip))
+	return &pip->pin_ostack[pip->pin_odepth];
+
+    return &pip->pin_stack[pip->pin_depth];
+}
+
+/*
+ * The frame of the innermost open input element.  New store nodes go
+ * under it.
+ */
+static inline pin_istack_t *
+pin_insert_input_frame (pin_insert_t *pip)
+{
+    return &pip->pin_stack[pip->pin_depth];
+}
+
+/*
+ * The name of the innermost open element: its node's name, or, for an
+ * output element, the name it was opened with.  A discarded input
+ * element has neither.
  */
 static inline pin_name_id_t
 pin_insert_top_name (pin_insert_t *pip)
 {
-    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+    if (pin_insert_top_is_output(pip))
+	return pip->pin_ostack[pip->pin_odepth].ps_old_name;
 
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
     if (psp->ps_node)
 	return psp->ps_node->pn_name;
-    if (psp->ps_emit & PSE_ONLY)
-	return psp->ps_old_name;
+
     return pin_name_id_null_atom();
 }
 

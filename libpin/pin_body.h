@@ -138,7 +138,7 @@ typedef struct pin_body_frame_s {
     pin_name_id_t pbf_match_name;       /* Name of the matched input element */
     const char *pbf_match_prefix;       /* Namespace prefix of matched element */
     char *pbf_match_attribs;            /* Attribute string from matched element open */
-    pin_depth_t pbf_copy_depth;         /* Output depth of matched element during BIA_COPY */
+    pin_depth_t pbf_copy_depth;         /* Input depth of the matched element */
     pin_node_id_t pbf_match_node;       /* BIA_FOR_EACH: retained matched element itself,
 					    used as the navigation root for a relative
 					    select in Phase 2 (null = none) */
@@ -147,8 +147,13 @@ typedef struct pin_body_frame_s {
 					    document child, not the context node, so
 					    relative BIA_FOR_EACH selects must navigate
 					    from the document root instead */
-    int pbf_depth_counter;              /* PBMODE_VALUE_OF, PBMODE_FOR_EACH_STREAM: nesting
-					    depth of child elements */
+    int pbf_depth_counter;              /* BIA_FOR_EACH: which phase is next */
+    uint8_t pbf_at_open;                /* Running at the matched element's open,
+					    before it is in the store */
+    uint8_t pbf_match_framed;           /* The matched element was opened for
+					    PBMODE_APPLY, PBMODE_VALUE_OF or
+					    PBMODE_FOR_EACH_STREAM, and is closed when
+					    the mode ends */
     uint32_t pbf_stream_ops;            /* PBMODE_FOR_EACH_STREAM/ITEM: atom of the
 					    op sequence run for each item */
     pin_name_id_t pbf_stream_name;      /* PBMODE_FOR_EACH_STREAM: element name selected */

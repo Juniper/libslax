@@ -53,7 +53,9 @@
 
 /* Forward declarations */
 static void pin_body_exec_advance(pin_parse_t *parsep);
-static void pin_insert_emit_open(pin_parse_t *parsep, pin_node_t *nodep);
+static void pin_insert_emit_open(pin_parse_t *parsep,
+				 struct pin_output_writer_s *wrp,
+				 pin_node_t *nodep);
 static void pin_insert_emit_text(pin_parse_t *parsep, const char *data,
 				 size_t len, pin_node_type_t type);
 static void pin_insert_emit_close(pin_parse_t *parsep);
@@ -61,7 +63,7 @@ static void pin_insert_emit_attrib(pin_parse_t *parsep, const char *name,
 				   const char *value);
 static void pin_parse_output_finish(pin_parse_t *parsep);
 static struct pin_output_writer_s *pin_parse_emit_writer(pin_parse_t *parsep,
-							 pin_depth_t depth);
+							 pin_istack_t *psp);
 static int pin_is_ws_only(const char *data, size_t len);
 static void pin_body_foreach_body(pin_parse_t *parsep, pin_body_instr_id_t head,
 				  pin_body_frame_t *bfp);
@@ -272,10 +274,14 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
 	psu_error(input, 0, "node pool exhausted");
 	goto fail;
     }
+    pip->pin_live = 1;
+    pip->pin_live_max = 1;
     nodep->pn_type = PIN_TYPE_ROOT;
     nodep->pn_depth = 0;
+    nodep->pn_flags = 0;
     nodep->pn_ns_map = PA_NULL_ATOM;
     nodep->pn_name = pin_name_id_null_atom();
+    nodep->pn_parent = pin_node_id_null_atom();
     nodep->pn_next = pin_node_id_null_atom();
     nodep->pn_contents = PA_NULL_ATOM;
 
@@ -335,12 +341,33 @@ pin_parse_namepool_string (pin_parse_t *parsep, pin_name_id_t name_id)
     return pin_namepool_string(pin_parse_workspace(parsep), name_id);
 }
 
+/*
+ * Count the nodes in the store, so the debug output can show how
+ * large it got.
+ */
+static void
+pin_insert_count_node (pin_insert_t *pip)
+{
+    pip->pin_live += 1;
+    if (pip->pin_live > pip->pin_live_max)
+	pip->pin_live_max = pip->pin_live;
+}
+
+static void
+pin_insert_node_free (pin_insert_t *pip, pin_node_id_t node_atom)
+{
+    pin_node_free(pip->pin_tree->pt_workspace, node_atom);
+    pip->pin_live -= 1;
+}
+
 static void
 pin_insert_push (pin_insert_t *pip, pin_node_id_t atom, pin_node_t *nodep)
 {
     pin_istack_t *parent = &pip->pin_stack[pip->pin_depth];
     pin_rstate_t *statep = parent->ps_statep;
     int parent_retain = parent->ps_context_retain;
+    pin_boolean_t parent_hold = parent->ps_hold;
+    pin_boolean_t parent_scratch = parent->ps_scratch;
 
     pip->pin_depth += 1;
     pin_istack_t *frame = &pip->pin_stack[pip->pin_depth];
@@ -351,6 +378,11 @@ pin_insert_push (pin_insert_t *pip, pin_node_id_t atom, pin_node_t *nodep)
     frame->ps_old_name = pin_name_id_null_atom();
     frame->ps_context_retain = parent_retain;
     frame->ps_emit = 0;
+    frame->ps_prev_atom = pip->pin_prev_atom;
+    frame->ps_prev_node = pip->pin_prev_node;
+    frame->ps_hold = parent_hold;
+    frame->ps_keep_below = FALSE;
+    frame->ps_scratch = parent_scratch;
 }
 
 static void
@@ -362,6 +394,58 @@ pin_insert_pop (pin_insert_t *pip)
 }
 
 /*
+ * Push a frame for an output element, nested in the innermost open
+ * element.  It has no node; "name_id" is kept to match its close.
+ */
+static pin_istack_t *
+pin_insert_push_output (pin_insert_t *pip, pin_name_id_t name_id,
+			pin_action_type_t action, unsigned emit)
+{
+    pin_istack_t *parent = pin_insert_top_frame(pip);
+    pin_rstate_t *statep = parent->ps_statep;
+    int parent_retain = parent->ps_context_retain;
+
+    pip->pin_odepth += 1;
+    pin_istack_t *frame = &pip->pin_ostack[pip->pin_odepth];
+    bzero(frame, sizeof(*frame));
+    frame->ps_statep = statep;
+    frame->ps_action = action;
+    frame->ps_old_name = name_id;
+    frame->ps_context_retain = parent_retain;
+    frame->ps_emit = emit;
+    frame->ps_idepth = pip->pin_depth;
+
+    return frame;
+}
+
+/*
+ * Pop the innermost output element, closing it in the output if it
+ * was opened there.
+ */
+static void
+pin_insert_pop_output (pin_parse_t *parsep)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_istack_t *psp = &pip->pin_ostack[pip->pin_odepth];
+    unsigned emit = psp->ps_emit;
+
+    bzero(psp, sizeof(*psp));
+    pip->pin_odepth -= 1;
+
+    if (emit & PSE_OPEN)
+	pin_insert_emit_close(parsep);
+}
+
+static inline pin_boolean_t
+pin_parse_is_attrib (pin_node_type_t type)
+{
+    if (type == PIN_TYPE_ATSTR || type == PIN_TYPE_ATTRIB
+	|| type == PIN_TYPE_NS)
+	return TRUE;
+    return FALSE;
+}
+
+/*
  * Insert a node into the insertion point
  */
 static pin_node_id_t
@@ -369,33 +453,41 @@ pin_insert_node (pin_insert_t *pip, const char *msg,
 		const char *data, size_t len,
 		pin_node_type_t type, pin_name_id_t name_id, pa_atom_t contents)
 {
-    /* Inside a phantom discard frame -- don't insert anything */
-    pin_istack_t *cur = &pip->pin_stack[pip->pin_depth];
-    if (cur->ps_node == NULL && cur->ps_action == PIA_DISCARD)
+    /*
+     * Below a discarded element, only elements (with their attributes
+     * and namespaces) are kept, as ancestors for what's inside them.
+     */
+    pin_istack_t *psp = pin_insert_input_frame(pip);
+    if (psp->ps_action == PIA_DISCARD && type != PIN_TYPE_ELT
+	    && !pin_parse_is_attrib(type))
 	return pin_node_id_null_atom();
 
     pin_node_id_t node_atom;
     pin_node_t *nodep = pin_node_alloc(pip->pin_tree->pt_workspace, &node_atom);
     if (nodep == NULL)
 	return pin_node_id_null_atom();
+    pin_insert_count_node(pip);
 
     /* Initialize our fields */
     nodep->pn_type = type;
+    nodep->pn_flags = 0;
     nodep->pn_ns_map = PA_NULL_ATOM;
     nodep->pn_name = name_id;
     nodep->pn_contents = contents;
 
     /*
-     * If we don't have a child, make one.  Otherwise append it.
+     * If we don't have a child, make one.  Otherwise append it.  The
+     * previous last child is kept so the new node can be unlinked
+     * again while it is still the last.
      */
-    pin_istack_t *psp = pin_insert_store_frame(pip);
-
     psu_log("%s: [%.*s] %u / %u (depth %u)", msg, (int) len, data,
 	    pin_name_id_atom_of(name_id), contents, psp->ps_node->pn_depth + 1);
 
     if (psp->ps_node->pn_contents == PA_NULL_ATOM) {
 	/* Record us as the child of the current stack node */
 	pin_node_set_child(psp->ps_node, node_atom);
+	pip->pin_prev_atom = pin_node_id_null_atom();
+	pip->pin_prev_node = NULL;
 
 	/* Set our "parent" as the current node */
 	nodep->pn_next = psp->ps_atom;
@@ -404,21 +496,20 @@ pin_insert_node (pin_insert_t *pip, const char *msg,
 	/* Append our node as the next child */
 	nodep->pn_next = psp->ps_atom;
 	psp->ps_last_node->pn_next = node_atom;
+	pip->pin_prev_atom = psp->ps_last_atom;
+	pip->pin_prev_node = psp->ps_last_node;
     }
 
     /* Mark the "last" as us */
     psp->ps_last_atom = node_atom;
     psp->ps_last_node = nodep;
 
-    /* Set our depth */
+    nodep->pn_parent = psp->ps_atom;
     nodep->pn_depth = psp->ps_node->pn_depth + 1;
 
     /* Update pin_maxdepth */
     if (nodep->pn_depth > pip->pin_maxdepth)
 	pip->pin_maxdepth = nodep->pn_depth;
-
-    if (cur->ps_context_retain)
-	nodep->pn_flags |= PNF_TRANSIENT;
 
     return node_atom;
 }
@@ -441,6 +532,7 @@ pin_insert_ns_node (pin_insert_t *pip, const char *msg,
     pin_node_t *nodep = pin_node_alloc(pip->pin_tree->pt_workspace, &node_atom);
     if (nodep == NULL)
 	return NULL;
+    pin_insert_count_node(pip);
 
     /* Initialize our fields */
     nodep->pn_type = type;
@@ -452,7 +544,9 @@ pin_insert_ns_node (pin_insert_t *pip, const char *msg,
 	    pin_name_id_atom_of(name_id), contents, pip->pin_depth + 1);
 
     /* New NS node's pn_next always points to parent (last-sibling sentinel) */
+    nodep->pn_flags = 0;
     nodep->pn_next = parent_atom;
+    nodep->pn_parent = parent_atom;
 
     /* Wire into the chain */
     pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
@@ -476,25 +570,15 @@ pin_insert_ns_node (pin_insert_t *pip, const char *msg,
 }
 
 /*
- * Find the parent of a node; not cheap.  Search the list of "pn_next"
- * until we find a node of differing depth.
+ * Find the parent of a node
  */
 static inline pin_node_t *
 pin_node_parent (pin_workspace_t *pwp, pin_node_t *nodep)
 {
-    pin_node_t *nextp;
-    pin_depth_t depth = nodep->pn_depth;
+    if (pin_node_id_is_null(nodep->pn_parent))
+	return NULL;
 
-    for (; !pin_node_id_is_null(nodep->pn_next); nodep = nextp) {
-	nextp = pin_node_addr(pwp, nodep->pn_next);
-	if (nextp == NULL)
-	    break;		/* Should not occur */
-
-	if (nextp->pn_depth < depth)
-	    return nextp;
-    }
-
-    return NULL;
+    return pin_node_addr(pwp, nodep->pn_parent);
 }
 
 /*
@@ -556,15 +640,6 @@ pin_parse_find_ns (pin_parse_t *parsep, pin_node_t *nodep, const char *prefix)
     }
 
     return pin_parse_find_ns_atom(parsep, nodep, pref_id);
-}
-
-static inline pin_boolean_t
-pin_parse_is_attrib (pin_node_type_t type)
-{
-    if (type == PIN_TYPE_ATSTR || type == PIN_TYPE_ATTRIB
-	|| type == PIN_TYPE_NS)
-	return TRUE;
-    return FALSE;
 }
 
 static void
@@ -682,10 +757,13 @@ pin_parse_next_attrib (char **content, char *endp,
  * With this long a comment, you're sure to realize this is a tricky
  * part, right?
  */
+#define PIN_IAX_NS	(1<<0)	/* Extract namespace declarations */
+#define PIN_IAX_ATTRIB	(1<<1)	/* Extract other attributes */
+
 static void
 pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 			   pin_node_t *nodep, char *attrib,
-			   pin_boolean_t only_ns)
+			   unsigned which)
 {
     pin_insert_t *pip = parsep->pp_insert;
     pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
@@ -725,6 +803,9 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	 * string?
 	 */
 	if (name != NULL && strncmp(name, xmlns, xmlns_len) == 0) {
+	    if (!(which & PIN_IAX_NS))
+		continue;
+
 	    /* Skip the "xmlns:?" leading string */
 	    name += xmlns_len;
 	    if (*name == ':')
@@ -753,7 +834,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 		break;
 	    }
 
-	} else if (only_ns) {
+	} else if (!(which & PIN_IAX_ATTRIB)) {
 	    continue;		/* Skip other attributes */
 
 	} else {
@@ -854,7 +935,7 @@ pin_insert_attribs_extract (pin_parse_t *parsep, pin_node_id_t node_atom,
 	    pin_node_set_ns_map(prev, ns_id);        /* Assign mapping */
 	    prev->pn_next = childp->pn_next;        /* Remove node from list */
 
-	    pin_node_free(pwp, prev->pn_next);       /* Free node */
+	    pin_insert_node_free(parsep->pp_insert, prev->pn_next); /* Free node */
 	    childp = prev;			    /* childp is dead; resume logic */
 	}
 
@@ -908,30 +989,35 @@ pin_parse_current_filter (pin_parse_t *parsep)
 #define PIN_IOF_RETAIN	(1<<0)	/* Retained input only; never output */
 #define PIN_IOF_INPUT	(1<<1)	/* Input copied to the output; keep it */
 
+static void pin_insert_open_attribs(pin_parse_t *parsep,
+				    struct pin_output_writer_s *wrp,
+				    pin_node_id_t node_atom, pin_node_t *nodep,
+				    const char *prefix, const char *name,
+				    char *attribs, pin_action_type_t type);
+static void pin_body_open_match(pin_parse_t *parsep, pin_body_frame_t *bfp);
+static void pin_insert_open_discard(pin_parse_t *parsep,
+				    pin_name_id_t name_id, const char *prefix,
+				    const char *name, const char *attribs,
+				    pin_rstate_t *statep);
 static void pin_insert_text_flags(pin_parse_t *parsep, const char *data,
 				  size_t len, pin_node_type_t type,
 				  unsigned flags);
 
 /*
  * Find the namespace for an element's prefix: in the store (the
- * element and its stored ancestors), then in the output's scope,
- * since the declaration may be on an output-only ancestor, which
- * isn't in the store.
+ * element and its stored ancestors), then in the scope of the output
+ * "wrp" it is sent to, since the declaration may be on an output
+ * ancestor, which isn't in the store.
  */
 static pin_ns_map_id_t
-pin_insert_find_ns (pin_parse_t *parsep, pin_node_t *nodep,
-		    const char *prefix)
+pin_insert_find_ns (pin_parse_t *parsep, pin_output_writer_t *wrp,
+		    pin_node_t *nodep, const char *prefix)
 {
     pin_ns_map_id_t ns_id = pin_parse_find_ns(parsep, nodep, prefix);
     if (!pin_ns_map_id_is_null(ns_id))
 	return ns_id;
 
     pin_insert_t *pip = parsep->pp_insert;
-    if (pip->pin_depth == 0)
-	return ns_id;
-
-    pin_output_writer_t *wrp = pin_parse_emit_writer(parsep,
-						     pip->pin_depth - 1);
     if (wrp == NULL)
 	return ns_id;
 
@@ -975,22 +1061,22 @@ pin_insert_drop_open (pin_parse_t *parsep, pin_istack_t *sfp,
 	if (childp->pn_type == PIN_TYPE_ATTRIB
 		|| childp->pn_type == PIN_TYPE_ATSTR)
 	    pa_arb_free_atom(pwp->pw_textpool, pin_node_text(childp));
-	pin_node_free(pwp, cid);
+	pin_insert_node_free(parsep->pp_insert, cid);
 	cid = next;
     }
 
-    pin_node_free(pwp, node_atom);
+    pin_insert_node_free(parsep->pp_insert, node_atom);
 }
 
 /*
- * Open an element.  Unless it's retained input (PIN_IOF_RETAIN), an
- * element opened where content goes to the output is sent to the
- * output.  If it is made only for the output (not PIN_IOF_INPUT), it
- * then leaves the store: its frame stays, with no node, so its
- * content and close go to the output too.  Input that is sent stays,
- * marked PNF_TRANSIENT, since the store is no longer the result.
- * Where nothing goes to the output (no sink, or the store is the
- * result), it stays in the store.
+ * Open an element.  Input (PIN_IOF_RETAIN or PIN_IOF_INPUT) goes on
+ * the input stack, with a node in the store.  Unless it's retained
+ * input, it is also sent to the output if content goes there.
+ *
+ * Anything else is an output element: it goes on the output stack,
+ * with no node.  It is built in the store just long enough to send it
+ * (with its attributes) to the output.  With nowhere to send it, it
+ * and its content are dropped.
  */
 static void
 pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
@@ -1005,28 +1091,35 @@ pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
     if (pin_name_id_is_null(name_id))
 	return;
 
-    /* If inside a discard frame, push another phantom instead of storing */
-    pin_istack_t *cur_frame = &pip->pin_stack[pip->pin_depth];
-    if (cur_frame->ps_node == NULL && cur_frame->ps_action == PIA_DISCARD) {
-	pin_rstate_t *statep = cur_frame->ps_statep;
-	pip->pin_depth += 1;
-	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
-	bzero(new_frame, sizeof(*new_frame));
-	new_frame->ps_action = PIA_DISCARD;
-	new_frame->ps_old_name = name_id;
-	new_frame->ps_statep = statep;
+    pin_boolean_t output = !(flags & (PIN_IOF_RETAIN | PIN_IOF_INPUT));
+    pin_istack_t *top = pin_insert_top_frame(pip);
+    pin_istack_t *sfp = pin_insert_input_frame(pip);
+
+    /*
+     * Inside a discarded element, push a phantom instead.  Discarding
+     * input drops what's opened below it, input or output; an output
+     * element only covers the output below it.
+     */
+    pin_istack_t *dfp = output ? top : sfp;
+    if (dfp->ps_action == PIA_DISCARD) {
+	if (output)
+	    pin_insert_push_output(pip, name_id, PIA_DISCARD, 0);
+	else
+	    pin_insert_open_discard(parsep, name_id, prefix, name, attribs,
+				    sfp->ps_statep);
 	return;
     }
 
-    /*
-     * An output-only element is built in the store just long enough
-     * to send it (with its attributes) to the output, so remember
-     * where it goes, to take it out again.
-     */
-    pin_boolean_t sent = !(flags & PIN_IOF_RETAIN)
-	&& pin_parse_emit_writer(parsep, pip->pin_depth) != NULL;
-    pin_boolean_t only = sent && !(flags & PIN_IOF_INPUT);
-    pin_istack_t *sfp = pin_insert_store_frame(pip);
+    pin_output_writer_t *wrp = NULL;
+    if (!(flags & PIN_IOF_RETAIN))
+	wrp = pin_parse_emit_writer(parsep, top);
+
+    if (output && wrp == NULL) {
+	pin_insert_push_output(pip, name_id, PIA_DISCARD, 0);
+	return;
+    }
+
+    /* Remember where an output element goes, to take it out again */
     pin_boolean_t had_child = (sfp->ps_node->pn_contents != PA_NULL_ATOM);
     pin_node_id_t last_atom = sfp->ps_last_atom;
     pin_node_t *last_nodep = sfp->ps_last_node;
@@ -1040,14 +1133,63 @@ pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
 
     pin_node_t *nodep = pin_node_addr(pip->pin_tree->pt_workspace, node_atom);
 
+    /*
+     * An input element sent to the output keeps all its attributes in
+     * the store, since its descendants may read them, but only the ones
+     * the rule asked for are sent.  The rest are added after the open
+     * is sent, from a copy, since extracting changes the string.
+     */
+    char *rest_attribs = NULL;
+    if (!output && wrp && attribs && type != PIA_SAVE_ATTRIB
+	    && type != PIA_SAVE_ATSTR)
+	rest_attribs = strdup(attribs);
+
     /* Push our node on the stack */
     pin_insert_push(pip, node_atom, nodep);
+    if (flags & PIN_IOF_RETAIN)
+	pin_insert_input_frame(pip)->ps_hold = TRUE;
 
-    /* The filter tracks input nodes; an output-only one won't last */
+    /* The filter tracks input nodes; an output one won't last */
     xo_filter_t *cur_filter = pin_parse_current_filter(parsep);
-    if (cur_filter && !only)
+    if (cur_filter && !output)
 	pin_filter_set_cur_node(cur_filter, node_atom);
 
+    pin_insert_open_attribs(parsep, wrp, node_atom, nodep, prefix, name,
+			    attribs, type);
+
+    if (wrp)
+	pin_insert_emit_open(parsep, wrp, nodep);
+
+    if (rest_attribs) {
+	pin_insert_attribs_extract(parsep, node_atom, nodep, rest_attribs,
+				   PIN_IAX_ATTRIB);
+	free(rest_attribs);
+    }
+
+    if (!output) {
+	if (wrp)
+	    pip->pin_stack[pip->pin_depth].ps_emit = PSE_CONTENT | PSE_OPEN;
+	return;
+    }
+
+    pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
+    bzero(psp, sizeof(*psp));
+    pin_insert_pop(pip);
+    pin_insert_drop_open(parsep, sfp, had_child, last_atom, last_nodep,
+			 node_atom, nodep);
+    pin_insert_push_output(pip, name_id, PIA_NONE, PSE_CONTENT | PSE_OPEN);
+}
+
+/*
+ * Add the attributes and namespaces of a just-opened element, as
+ * "type" (PIA_*) asks, and find its namespace.
+ */
+static void
+pin_insert_open_attribs (pin_parse_t *parsep, pin_output_writer_t *wrp,
+			 pin_node_id_t node_atom, pin_node_t *nodep,
+			 const char *prefix, const char *name, char *attribs,
+			 pin_action_type_t type)
+{
     if (attribs) {
 	enum { SAVE_NONE, SAVE_NS, SAVE_STRING, SAVE_FULL } save = SAVE_NONE;
 
@@ -1078,35 +1220,135 @@ pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
 	    pin_insert_attribs(parsep, nodep, attribs);
 	else if (save != SAVE_NONE) /* Save as parsed attributes */
 	    pin_insert_attribs_extract(parsep, node_atom, nodep, attribs,
-				      (save == SAVE_NS) ? TRUE : FALSE);
+				       (save == SAVE_NS) ? PIN_IAX_NS
+				       : PIN_IAX_NS | PIN_IAX_ATTRIB);
     }
 
     if (prefix != NULL) {
-	pin_ns_map_id_t ns_id = pin_insert_find_ns(parsep, nodep, prefix);
+	pin_ns_map_id_t ns_id = pin_insert_find_ns(parsep, wrp, nodep, prefix);
 	pin_node_set_ns_map(nodep, ns_id);
 	if (pin_ns_map_id_is_null(ns_id))
 	    pin_source_failure(parsep->pp_srcp, 0,
 			      "namespace mapping not found for %s:%s",
 			      prefix, name);
     }
+}
 
-    if (!(flags & PIN_IOF_RETAIN))
-	pin_insert_emit_open(parsep, nodep);
+/*
+ * Open an input element that isn't itself output.  It goes into the
+ * store with its attributes and namespaces, so what's inside it has
+ * its ancestors.  With PIA_DISCARD, nothing below it is retained or
+ * output; otherwise its content goes to the output as "emit" says.
+ * It isn't part of the result, and neither is anything below it.
+ * "attribs" isn't changed.
+ */
+static void
+pin_insert_open_input (pin_parse_t *parsep, pin_name_id_t name_id,
+		       const char *prefix, const char *name,
+		       const char *attribs, pin_action_type_t action,
+		       pin_rstate_t *statep, unsigned emit)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_node_id_t node_atom;
+    pin_node_t *nodep = NULL;
 
-    if (sent && !only)
-	nodep->pn_flags |= PNF_TRANSIENT;
+    node_atom = pin_insert_node(pip, "pin_insert_open_input",
+				name, strlen(name),
+				PIN_TYPE_ELT, name_id, PA_NULL_ATOM);
+    if (!pin_node_id_is_null(node_atom))
+	nodep = pin_node_addr(pip->pin_tree->pt_workspace, node_atom);
 
-    if (only) {
+    if (nodep == NULL) {
+	pip->pin_depth += 1;
 	pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
-	pin_insert_drop_open(parsep, sfp, had_child, last_atom, last_nodep,
-			     node_atom, nodep);
-	psp->ps_atom = pin_node_id_null_atom();
-	psp->ps_node = NULL;
-	psp->ps_last_atom = pin_node_id_null_atom();
-	psp->ps_last_node = NULL;
+	bzero(psp, sizeof(*psp));
+	psp->ps_action = PIA_DISCARD;
 	psp->ps_old_name = name_id;
-	psp->ps_emit |= PSE_ONLY;
+	psp->ps_statep = statep;
+	return;
     }
+
+    pin_insert_push(pip, node_atom, nodep);
+
+    pin_istack_t *psp = pin_insert_input_frame(pip);
+    psp->ps_scratch = TRUE;
+    psp->ps_action = action;
+    psp->ps_statep = statep;
+    psp->ps_emit = emit;
+
+    xo_filter_t *cur_filter = pin_parse_current_filter(parsep);
+    if (cur_filter)
+	pin_filter_set_cur_node(cur_filter, node_atom);
+
+    char *copy = attribs ? strdup(attribs) : NULL;
+    pin_insert_open_attribs(parsep, NULL, node_atom, nodep, prefix, name,
+			    copy, PIA_SAVE_ATTRIB);
+    free(copy);
+}
+
+/*
+ * Open a discarded input element: nothing below it is retained or
+ * output.
+ */
+static void
+pin_insert_open_discard (pin_parse_t *parsep, pin_name_id_t name_id,
+			 const char *prefix, const char *name,
+			 const char *attribs, pin_rstate_t *statep)
+{
+    pin_insert_open_input(parsep, name_id, prefix, name, attribs,
+			  PIA_DISCARD, statep, 0);
+}
+
+/*
+ * Open an input element whose content goes where the innermost open
+ * element's content goes, without the element itself.
+ */
+static void
+pin_insert_open_pass (pin_parse_t *parsep, pin_name_id_t name_id,
+		      const char *prefix, const char *name,
+		      const char *attribs)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+
+    pin_insert_open_input(parsep, name_id, prefix, name, attribs, PIA_NONE,
+			  pin_insert_input_frame(pip)->ps_statep,
+			  pin_insert_top_frame(pip)->ps_emit & PSE_CONTENT);
+}
+
+/*
+ * A body mode that reads the matched element's content without
+ * output for the element itself (apply-templates, value-of, a
+ * streaming for-each) opens it in the store when the body is running
+ * at its open.  Resumed later, the element has already closed.
+ */
+static void
+pin_body_open_match (pin_parse_t *parsep, pin_body_frame_t *bfp)
+{
+    if (!bfp->pbf_at_open)
+	return;
+
+    const char *match_str = pin_parse_namepool_string(parsep,
+						      bfp->pbf_match_name);
+    if (match_str == NULL)
+	return;
+
+    pin_insert_open_pass(parsep, bfp->pbf_match_name, bfp->pbf_match_prefix,
+			 match_str, bfp->pbf_match_attribs);
+    bfp->pbf_match_framed = 1;
+}
+
+/*
+ * The matched element opened by pin_body_open_match is closing.
+ */
+static void
+pin_body_close_match (pin_parse_t *parsep, pin_body_frame_t *bfp,
+		      const char *prefix, const char *name)
+{
+    if (!bfp->pbf_match_framed)
+	return;
+
+    bfp->pbf_match_framed = 0;
+    pin_insert_close(parsep, prefix, name);
 }
 
 void
@@ -1115,6 +1357,115 @@ pin_insert_open (pin_parse_t *parsep, pin_name_id_t name_id,
 		pin_action_type_t type)
 {
     pin_insert_open_flags(parsep, name_id, prefix, name, attribs, type, 0);
+}
+
+/*
+ * True if this input frame's element is part of the result: with no
+ * output destination, the store itself is the result, less what's
+ * held for later reading or opened only to frame its content.
+ */
+static pin_boolean_t
+pin_insert_kept (pin_parse_t *parsep, pin_istack_t *psp)
+{
+    return (parsep->pp_dests == NULL && psp->ps_node != NULL
+	    && !psp->ps_hold && !psp->ps_scratch);
+}
+
+/*
+ * True if this input frame's element keeps its content in the store
+ * past its close: it is kept, or it is read after it closes (ps_hold,
+ * set for retained input and inherited by what's inside).
+ */
+static pin_boolean_t
+pin_insert_retained (pin_parse_t *parsep, pin_istack_t *psp)
+{
+    return psp->ps_hold || pin_insert_kept(parsep, psp);
+}
+
+/*
+ * Free a subtree of the store, already unlinked from its parent,
+ * children first.  Each node's last child points back up to it, so
+ * the walk needs no stack.
+ */
+static void
+pin_insert_free_subtree (pin_insert_t *pip, pin_node_id_t top_atom)
+{
+    pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
+    pin_node_id_t cur = top_atom;
+
+    for (;;) {
+	pin_node_t *nodep = pin_node_addr(pwp, cur);
+	if (nodep == NULL)
+	    return;
+
+	pin_node_id_t child = pin_node_child(nodep);
+	if (!pin_node_id_is_null(child)) {
+	    cur = child;
+	    continue;
+	}
+
+	pin_node_id_t next = nodep->pn_next;
+	pin_node_id_t parent = nodep->pn_parent;
+
+	pa_arb_free_atom(pwp->pw_textpool, pin_node_text(nodep));
+	pin_insert_node_free(pip, cur);
+
+	if (pin_node_id_equal(cur, top_atom))
+	    return;
+
+	if (pin_node_id_equal(next, parent)) {
+	    /* That was the last child, so the parent is now a leaf */
+	    pin_node_t *parentp = pin_node_addr(pwp, parent);
+	    if (parentp == NULL)
+		return;
+
+	    pin_node_set_child(parentp, pin_node_id_null_atom());
+	    cur = parent;
+	} else {
+	    cur = next;
+	}
+    }
+}
+
+/*
+ * An input element has closed and everything that reads it at its
+ * close has run.  Unless it stays in the store, unlink it from its
+ * parent and free it.  It is still the parent's last child, so its
+ * frame's ps_prev_atom is the new last child.  Below an element
+ * that's held, nothing is freed on its own; it goes with the holder.
+ */
+static void
+pin_insert_release (pin_parse_t *parsep, pin_istack_t *closedp)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+    pin_istack_t *parent = pin_insert_input_frame(pip);
+    pin_node_t *nodep = closedp->ps_node;
+
+    if (nodep == NULL || parent->ps_hold)
+	return;
+
+    if (closedp->ps_keep_below || pin_insert_kept(parsep, closedp)) {
+	parent->ps_keep_below = TRUE;
+	return;
+    }
+
+    /* Something was added after it; leave it be */
+    if (!pin_node_id_equal(parent->ps_last_atom, closedp->ps_atom))
+	return;
+
+    if (pin_node_id_is_null(closedp->ps_prev_atom))
+	pin_node_set_child(parent->ps_node, pin_node_id_null_atom());
+    else
+	closedp->ps_prev_node->pn_next = parent->ps_atom;
+
+    parent->ps_last_atom = closedp->ps_prev_atom;
+    parent->ps_last_node = closedp->ps_prev_node;
+
+    psu_log("pin_insert_release: %u (depth %u)",
+	    pa_fixed_atom_of(pin_node_id_atom_of(closedp->ps_atom)),
+	    nodep->pn_depth);
+
+    pin_insert_free_subtree(parsep->pp_insert, closedp->ps_atom);
 }
 
 void
@@ -1136,6 +1487,17 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	return;
     }
 
+    if (pin_insert_top_is_output(pip)) {
+	if (!pin_name_id_equal(pip->pin_ostack[pip->pin_odepth].ps_old_name,
+			       name_id)) {
+	    pin_source_failure(parsep->pp_srcp, 0,
+			      "close doesn't match: %s", name);
+	    return;
+	}
+	pin_insert_pop_output(parsep);
+	return;
+    }
+
     pin_istack_t *psp = &pip->pin_stack[pip->pin_depth];
 
     if (pip->pin_depth == 0) {
@@ -1145,7 +1507,7 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     }
 
     /* Phantom frame pushed for PIA_DISCARD -- verify name and pop */
-    if (psp->ps_node == NULL && !(psp->ps_emit & PSE_ONLY)) {
+    if (psp->ps_node == NULL) {
 	if (psp->ps_action != PIA_DISCARD) {
 	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close for open that doesn't exist: %s", name);
@@ -1162,14 +1524,7 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	return;
     }
 
-    if (psp->ps_emit & PSE_ONLY) {
-	/* Output only: ps_old_name is the name it was opened with */
-	if (!pin_name_id_equal(psp->ps_old_name, name_id)) {
-	    pin_source_failure(parsep->pp_srcp, 0,
-			      "close doesn't match: %s", name);
-	    return;
-	}
-    } else if (!pin_name_id_is_null(psp->ps_old_name)) {
+    if (!pin_name_id_is_null(psp->ps_old_name)) {
 	if (!pin_name_id_equal(psp->ps_old_name, name_id)) {
 	    pin_source_failure(parsep->pp_srcp, 0,
 			      "close doesn't match original: %s", name);
@@ -1184,34 +1539,41 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
     pin_node_id_t context_node = psp->ps_atom;
     pin_action_type_t popped_action = psp->ps_action;
     unsigned popped_emit = psp->ps_emit;
+    pin_istack_t closed = *psp;
     bzero(psp, sizeof(*psp));
     pin_insert_pop(pip);
+
+    /* A discarded element was never seen by the rules or the output */
+    if (popped_action == PIA_DISCARD) {
+	pin_insert_release(parsep, &closed);
+	return;
+    }
     if (popped_emit & PSE_OPEN)
 	pin_insert_emit_close(parsep);
 
     /* PIA_WRAP: also close the synthetic wrapper node */
-    if (popped_action == PIA_WRAP) {
-	psp = &pip->pin_stack[pip->pin_depth];
-	popped_emit = psp->ps_emit;
-	bzero(psp, sizeof(*psp));
-	pin_insert_pop(pip);
-	if (popped_emit & PSE_OPEN)
-	    pin_insert_emit_close(parsep);
-    }
+    if (popped_action == PIA_WRAP && pin_insert_top_is_output(pip))
+	pin_insert_pop_output(parsep);
 
     /*
      * Op-dispatch: execute the compiled op sequence against the retained
      * element.  Ops emit into the output at the current (post-pop) depth,
-     * so emitted nodes are siblings of the retained element and not transient.
+     * so emitted nodes are siblings of the retained element.
      */
     if (!pin_op_id_is_null(close_ops)) {
+	if (PSU_BIT_TEST(parsep->pp_flags, PIN_PF_DEBUG)) {
+	    psu_log("pin_insert_close: store before close ops");
+	    pin_parse_dump(parsep);
+	}
+
 	pin_exec_run(&parsep->pp_exec, parsep, close_ops, context_node);
+	pin_insert_release(parsep, &closed);
 	return;
     }
 
     /*
      * Body FSM: detect when the matched element (opened by BIA_COPY or
-     * BIA_APPLY) closes.  pbf_copy_depth is the output depth set when
+     * BIA_APPLY) closes.  pbf_copy_depth is the input depth set when
      * pin_insert_open(match_name) was called; after the pop above it is
      * pbf_copy_depth - 1.
      */
@@ -1250,15 +1612,12 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	    }
 
 	    /*
-	     * Reset the mode before running the winner's body/emit: both
-	     * pin_body_foreach_body and pin_exec_emit_node call pin_insert_open
-	     * / pin_insert_close for the same element being closed here, and if
-	     * pbf_mode were still PBMODE_APPLY_WAIT, that nested pin_insert_close
-	     * would re-enter this exact branch on the same node, recursing
-	     * forever.
+	     * The wait is over; the winner's body or copy only writes
+	     * output, whose closes don't come back here.
 	     */
 	    bfp->pbf_apply_winner_rid = PA_NULL_ATOM;
 	    bfp->pbf_apply_fallback_rid = PA_NULL_ATOM;
+	    bfp->pbf_copy_depth = pip->pin_depth;
 	    bfp->pbf_mode = PBMODE_APPLY;
 
 	    if (winner != NULL) {
@@ -1277,9 +1636,7 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 	    /*
 	     * A streaming for-each item has closed and its retained
 	     * subtree is complete: run the loop body's ops against it, as
-	     * op dispatch does for each node of a buffered for-each.  As
-	     * with PBMODE_APPLY_WAIT, reset the mode first, since the
-	     * body's own pin_insert_close calls land here too.
+	     * op dispatch does for each node of a buffered for-each.
 	     */
 	    bfp->pbf_mode = PBMODE_FOR_EACH_STREAM;
 	    bfp->pbf_position += 1;
@@ -1287,13 +1644,14 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 			 pin_op_id(bfp->pbf_stream_ops), context_node);
 	}
     }
+
+    pin_insert_release(parsep, &closed);
 }
 
 /*
  * Add text (or a comment or PI).  Where content goes to the output,
  * it is sent there; output text (not PIN_IOF_INPUT) then isn't kept,
- * and input text is kept, marked PNF_TRANSIENT.  Otherwise it goes
- * into the store.
+ * but input text is.  Otherwise it goes into the store.
  */
 void
 pin_insert_text (pin_parse_t *parsep, const char *data, size_t len,
@@ -1336,13 +1694,17 @@ pin_insert_text_flags (pin_parse_t *parsep, const char *data, size_t len,
     memcpy(cp, data, len);
     cp[len] = '\0';
 
-    pin_boolean_t sent = (pin_parse_emit_writer(parsep, pip->pin_depth)
+    pin_boolean_t sent = (pin_parse_emit_writer(parsep,
+						pin_insert_top_frame(pip))
 			  != NULL);
     pin_insert_emit_text(parsep, cp, len, type);
 
-    /* Output text, and content of an output-only element, isn't kept */
-    if (sent && (!(flags & PIN_IOF_INPUT)
-		 || (pip->pin_stack[pip->pin_depth].ps_emit & PSE_ONLY))) {
+    /*
+     * Output text, and content of an output element, isn't kept.
+     * Neither is text in an element that will be freed at its close.
+     */
+    if ((sent && !(flags & PIN_IOF_INPUT)) || pin_insert_top_is_output(pip)
+	    || !pin_insert_retained(parsep, pin_insert_input_frame(pip))) {
 	pa_arb_free_atom(prp, data_atom);
 	return;
     }
@@ -1350,17 +1712,8 @@ pin_insert_text_flags (pin_parse_t *parsep, const char *data, size_t len,
     pin_node_id_t node_atom;
     node_atom = pin_insert_node(pip, "pin_insert_text", data, len,
 			       type, pin_name_id_null_atom(), pa_arb_atom_of(data_atom));
-    if (pin_node_id_is_null(node_atom)) {
+    if (pin_node_id_is_null(node_atom))
 	pa_arb_free_atom(prp, data_atom);
-	return;
-    }
-
-    if (sent) {
-	pin_node_t *nodep = pin_node_addr(pip->pin_tree->pt_workspace,
-					  node_atom);
-	if (nodep)
-	    nodep->pn_flags |= PNF_TRANSIENT;
-    }
 }
 
 void
@@ -1721,7 +2074,7 @@ pin_insert_attrib_pair (pin_parse_t *parsep, const char *name, const char *value
     pin_insert_t *pip = parsep->pp_insert;
     pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
 
-    if (pip->pin_stack[pip->pin_depth].ps_emit & PSE_ONLY) {
+    if (pin_insert_top_is_output(pip)) {
 	pin_insert_emit_attrib(parsep, name, value);
 	return;
     }
@@ -2171,11 +2524,12 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    /*
 	     * xsl:apply-templates dispatches the CHILDREN of the current
 	     * element, not the element itself.  Do NOT open the matched element
-	     * in the output.  Record the current output depth so the CLOSE
+	     * in the output.  Record the current input depth so the CLOSE
 	     * bypass in pin_parse can detect when the element closes.
 	     *
 	     * If bi_mode is set, record the mode atom for mode-aware dispatch.
 	     */
+	    pin_body_open_match(parsep, bfp);
 	    bfp->pbf_copy_depth = pip->pin_depth;
 	    bfp->pbf_mode = PBMODE_APPLY;
 	    bfp->pbf_apply_mode_id = instr->bi_mode;
@@ -2213,13 +2567,13 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    }
 	    /*
 	     * First use of select=".": collect text content of the matched
-	     * element and emit it in place.  Child element open/close events
-	     * are tracked via pbf_depth_counter so we know when the element ends.
+	     * element and emit it in place.  Its child elements pass their
+	     * text through, and its close at pbf_copy_depth ends the mode.
 	     * Text is also accumulated into pbf_value_cache for later reuse.
 	     */
 	    xo_buf_init(&bfp->pbf_value_cache);
+	    pin_body_open_match(parsep, bfp);
 	    bfp->pbf_copy_depth = pip->pin_depth;
-	    bfp->pbf_depth_counter = 0;
 	    bfp->pbf_mode = PBMODE_VALUE_OF;
 	    return;		/* Pause; resume on matched element CLOSE */
 	}
@@ -2284,7 +2638,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 			}
 		    } else {
 			/* Arithmetic expression (no context node needed) */
-				pin_node_id_t ctx = pin_insert_store_frame(pip)->ps_atom;
+				pin_node_id_t ctx = pin_insert_input_frame(pip)->ps_atom;
 			char vbuf[128];
 			pin_exec_eval_expr_string(swp, ctx, sel, slen,
 						  vbuf, sizeof(vbuf));
@@ -2367,15 +2721,16 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	     * children are now in the retained tree; execute the for-each.
 	     *
 	     * Streaming (bi_filter_idx set at compile time, for an unsorted
-	     * select of one child name): don't retain the matched element.
+	     * select of one child name): don't retain the matched element's
+	     * content.
 	     * Switch to PBMODE_FOR_EACH_STREAM, which keeps one selected
 	     * child at a time and runs the body as each one closes.  The
 	     * PC already points past the for-each, so the matched element's
 	     * close resumes with what follows it.
 	     */
 	    if (instr->bi_filter_idx != 0 && !bfp->pbf_is_root_match) {
+		pin_body_open_match(parsep, bfp);
 		bfp->pbf_copy_depth = pip->pin_depth;
-		bfp->pbf_depth_counter = 0;
 		bfp->pbf_position = 0;
 		bfp->pbf_last = 0;
 		bfp->pbf_stream_ops = instr->bi_filter_idx;
@@ -2396,7 +2751,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		 * navigation root for absolute paths.  For /authors/author the
 		 * retained <authors> is a child of this node, so navigating
 		 * authors/author from here finds the right nodes. */
-		bfp->pbf_ctx_node = pin_insert_store_frame(pip)->ps_atom;
+		bfp->pbf_ctx_node = pin_insert_input_frame(pip)->ps_atom;
 		const char *match_str = pin_parse_namepool_string(parsep,
 							      bfp->pbf_match_name);
 		if (match_str) {
@@ -2407,9 +2762,6 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		    pip->pin_stack[pip->pin_depth].ps_statep = NULL;
 		    bfp->pbf_copy_depth = pip->pin_depth;
 		    bfp->pbf_match_node = pip->pin_stack[pip->pin_depth].ps_atom;
-		    /* Mark as transient: retained for navigation only, not output */
-		    if (pip->pin_stack[pip->pin_depth].ps_node)
-			pip->pin_stack[pip->pin_depth].ps_node->pn_flags |= PNF_TRANSIENT;
 		}
 		bfp->pbf_depth_counter = 1;
 		bfp->pbf_pc = pc;		/* Re-run BIA_FOR_EACH on resume */
@@ -2451,7 +2803,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    } else {
 		start = !pin_node_id_is_null(bfp->pbf_match_node)
 			? bfp->pbf_match_node
-			: pin_insert_store_frame(pip)->ps_atom;
+			: pin_insert_input_frame(pip)->ps_atom;
 	    }
 
 	    /* Collect matching nodes */
@@ -2544,7 +2896,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    const char *expr = !pin_name_id_is_null(instr->bi_select)
 			       ? pin_parse_namepool_string(parsep, instr->bi_select) : NULL;
 	    if (expr) {
-		pin_node_id_t ctx = pin_insert_store_frame(pip)->ps_atom;
+		pin_node_id_t ctx = pin_insert_input_frame(pip)->ps_atom;
 		if (!pin_node_id_is_null(ctx)) {
 		    pin_workspace_t *pwp = pin_parse_workspace(parsep);
 		    char vbuf[64];
@@ -2613,9 +2965,8 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 
     /*
      * Op-dispatch path: retain the element as context for the op sequence
-     * that executes on CLOSE.  The retained element and all descendants are
-     * marked PNF_TRANSIENT so they are suppressed from the emitted output.
-     * Op-emitted nodes go at parent depth after the pop and are not transient.
+     * that executes on CLOSE.  It is freed, with its descendants, once
+     * the ops have run.  Op-emitted nodes go at the parent's depth.
      */
     if (!pin_op_id_is_null(prp->pr_close_ops)
 	    && pin_body_instr_id_is_null(prp->pr_body)
@@ -2625,23 +2976,6 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
 	new_frame->ps_close_ops = prp->pr_close_ops;
 	new_frame->ps_context_retain = 1;
-
-	if (new_frame->ps_node != NULL) {
-	    new_frame->ps_node->pn_flags |= PNF_TRANSIENT;
-
-	    /* Attribute children are already inserted by pin_insert_open;
-	     * mark them transient now since ps_context_retain was not yet
-	     * set when they were created. */
-	    pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
-	    pin_node_id_t cid = pin_node_child(new_frame->ps_node);
-	    while (!pin_node_id_is_null(cid)) {
-		pin_node_t *child = pin_node_addr(pwp, cid);
-		if (child == NULL || child->pn_depth <= new_frame->ps_node->pn_depth)
-		    break;
-		child->pn_flags |= PNF_TRANSIENT;
-		cid = child->pn_next;
-	    }
-	}
 	return;
     }
 
@@ -2675,25 +3009,24 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 	    bfp->pbf_is_root_match = (hrb != NULL
 		    && !pin_rule_id_is_null(hrb->prb_root_rule)
 		    && prp == pin_rulebook_rule(hrb, hrb->prb_root_rule));
+	    bfp->pbf_at_open = 1;
 	    body->pbe_depth += 1;
 	}
 
 	pin_body_exec_advance(parsep);
+
+	if (body->pbe_depth > initial_depth)
+	    body->pbe_stack[initial_depth].pbf_at_open = 0;
 
 	/*
 	 * If the body completed without hitting BIA_COPY (e.g. pure
 	 * EMIT_* literal body), push a phantom DISCARD frame so the
 	 * matched element's content and close tag are absorbed.
 	 */
-	if (body->pbe_depth == initial_depth) {
-	    pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
-	    pip->pin_depth += 1;
-	    pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
-	    bzero(new_frame, sizeof(*new_frame));
-	    new_frame->ps_action = PIA_DISCARD;
-	    new_frame->ps_old_name = save_name_id;
-	    new_frame->ps_statep = statep;
-	}
+	if (body->pbe_depth == initial_depth)
+	    pin_insert_open_discard(parsep, save_name_id, prefix, name,
+				    attribs,
+				    pip->pin_stack[pip->pin_depth].ps_statep);
 
 	return;
     }
@@ -2718,22 +3051,14 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 	}
 	break;
 
-    case PIA_DISCARD: {
-	/* Push phantom frame (no node) to track depth and close matching */
+    case PIA_DISCARD:;
 	pin_rstate_t *statep = pip->pin_stack[pip->pin_depth].ps_statep;
-	pip->pin_depth += 1;
-	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
-	bzero(new_frame, sizeof(*new_frame));
-	new_frame->ps_action = PIA_DISCARD;
-	new_frame->ps_old_name = save_name_id;
-	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
-	    new_frame->ps_statep = pin_rstate_element(parsep->pp_rulebook,
-						     prp->pr_new_state);
-	} else {
-	    new_frame->ps_statep = statep;
-	}
+	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook)
+	    statep = pin_rstate_element(parsep->pp_rulebook,
+					prp->pr_new_state);
+	pin_insert_open_discard(parsep, save_name_id, prefix, name, attribs,
+				statep);
 	break;
-    }
 
     case PIA_LITERAL: {
 	/*
@@ -2759,18 +3084,12 @@ pin_parse_handle_rule (pin_parse_t *parsep, pin_name_id_t name_id,
 
 	pin_insert_close(parsep, NULL, emit_tag_str);
 
-	/* Push phantom DISCARD frame to absorb the matched element's subtree */
-	pip->pin_depth += 1;
-	pin_istack_t *new_frame = &pip->pin_stack[pip->pin_depth];
-	bzero(new_frame, sizeof(*new_frame));
-	new_frame->ps_action = PIA_DISCARD;
-	new_frame->ps_old_name = save_name_id;
-	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook) {
-	    new_frame->ps_statep = pin_rstate_element(parsep->pp_rulebook,
-						     prp->pr_new_state);
-	} else {
-	    new_frame->ps_statep = parent_statep;
-	}
+	/* The matched element itself is discarded */
+	if (!pin_rstate_id_is_null(prp->pr_new_state) && parsep->pp_rulebook)
+	    parent_statep = pin_rstate_element(parsep->pp_rulebook,
+					       prp->pr_new_state);
+	pin_insert_open_discard(parsep, save_name_id, prefix, name, attribs,
+				parent_statep);
 	break;
     }
 
@@ -2858,6 +3177,9 @@ pin_parse (pin_parse_t *parsep)
 
 	case PIN_TYPE_EOF:	/* End of file */
 	    pin_parse_output_finish(parsep);
+	    if (PSU_BIT_TEST(parsep->pp_flags, PIN_PF_DEBUG))
+		psu_log("store high-water mark: %u nodes (%u at end)",
+			pip->pin_live_max, pip->pin_live);
 	    return 0;
 
 	case PIN_TYPE_FAIL:	/* Failure mode */
@@ -3011,26 +3333,24 @@ pin_parse (pin_parse_t *parsep)
 
 	    /*
 	     * PBMODE_VALUE_OF bypass: collecting text from the matched element.
-	     * Child element open/close events are suppressed from the output
-	     * tree; only text content flows through.  Advance the filter to
-	     * keep its depth counter in sync, and track nesting via the counter.
+	     * Child elements aren't output; only their text flows through.
+	     * Advance the filter to keep its depth counter in sync.
 	     */
 	    {
 		pin_body_exec_t *body = &pip->pin_body;
 		if (body->pbe_depth > 0
 			&& body->pbe_stack[body->pbe_depth - 1].pbf_mode
 			   == PBMODE_VALUE_OF) {
-		    pin_body_frame_t *vbfp = &body->pbe_stack[body->pbe_depth - 1];
 		    xo_filter_t *vof_filter = pin_parse_current_filter(parsep);
 		    if (vof_filter) {
 			pin_filter_set_attribs(vof_filter, rest);
 			xo_filter_walk_open(NULL, vof_filter, localp, -1);
 		    }
-		    vbfp->pbf_depth_counter += 1;
+		    pin_insert_open_pass(parsep, name_id, data, localp, rest);
 		    if (type == PIN_TYPE_EMPTY) {
+			pin_insert_close(parsep, data, localp);
 			if (vof_filter)
 			    xo_filter_walk_close(NULL, vof_filter, localp, -1);
-			vbfp->pbf_depth_counter -= 1;
 		    }
 		    break;
 		}
@@ -3109,9 +3429,6 @@ pin_parse (pin_parse_t *parsep)
 					      rest, PIA_SAVE_ATTRIB,
 					      PIN_IOF_RETAIN);
 			abfp->pbf_copy_depth = pip->pin_depth;
-			if (pip->pin_stack[pip->pin_depth].ps_node)
-			    pip->pin_stack[pip->pin_depth].ps_node->pn_flags
-				|= PNF_TRANSIENT;
 			abfp->pbf_apply_fallback_rid = apl_fallback_rid;
 			abfp->pbf_apply_winner_rid = PA_NULL_ATOM;
 			abfp->pbf_mode = PBMODE_APPLY_WAIT;
@@ -3206,8 +3523,7 @@ pin_parse (pin_parse_t *parsep)
 	     * the matched element's children.  A direct child with the
 	     * selected name is retained (transiently) as the next item, and
 	     * PBMODE_FOR_EACH_ITEM saves its descendants.  Anything else is
-	     * dropped without touching the tree; pbf_depth_counter tracks how
-	     * deep inside a dropped child we are, as PBMODE_VALUE_OF does.
+	     * discarded.
 	     */
 	    {
 		pin_body_exec_t *body = &pip->pin_body;
@@ -3224,15 +3540,12 @@ pin_parse (pin_parse_t *parsep)
 		    }
 
 		    bool keep = (sbfp->pbf_mode == PBMODE_FOR_EACH_ITEM);
-		    if (!keep && sbfp->pbf_depth_counter == 0
+		    if (!keep && pip->pin_depth == sbfp->pbf_copy_depth
 			    && pin_name_id_equal(name_id, sbfp->pbf_stream_name)) {
 			keep = true;
 			pin_insert_open_flags(parsep, name_id, data, localp,
 					      rest, PIA_SAVE_ATTRIB,
 					      PIN_IOF_RETAIN);
-			if (pip->pin_stack[pip->pin_depth].ps_node)
-			    pip->pin_stack[pip->pin_depth].ps_node->pn_flags
-				|= PNF_TRANSIENT;
 			sbfp->pbf_mode = PBMODE_FOR_EACH_ITEM;
 		    } else if (keep) {
 			pin_rule_t save_rule;
@@ -3241,14 +3554,12 @@ pin_parse (pin_parse_t *parsep)
 			pin_parse_handle_rule(parsep, name_id, data, localp,
 					     rest, &save_rule);
 		    } else {
-			sbfp->pbf_depth_counter += 1;
+			pin_insert_open_discard(parsep, name_id, data, localp,
+				rest, pin_insert_input_frame(pip)->ps_statep);
 		    }
 
 		    if (type == PIN_TYPE_EMPTY) {
-			if (keep)
-			    pin_insert_close(parsep, data, localp);
-			else
-			    sbfp->pbf_depth_counter -= 1;
+			pin_insert_close(parsep, data, localp);
 			if (fs_filter)
 			    xo_filter_walk_close(NULL, fs_filter, localp, -1);
 		    }
@@ -3471,22 +3782,18 @@ pin_parse (pin_parse_t *parsep)
 	    }
 
 	    /*
-	     * PBMODE_VALUE_OF bypass: child element closes decrement the
-	     * counter; when it reaches zero the matched element itself is
-	     * closing, so we exit the mode and resume body execution.
-	     * The matched element was never opened in the output tree.
+	     * PBMODE_VALUE_OF bypass: at pbf_copy_depth the matched element
+	     * itself is closing, so we exit the mode and resume body
+	     * execution.  It was never opened in the output.
 	     */
 	    {
 		pin_body_exec_t *vbody = &pip->pin_body;
 		if (vbody->pbe_depth > 0) {
 		    pin_body_frame_t *vbfp =
 			&vbody->pbe_stack[vbody->pbe_depth - 1];
-		    if (vbfp->pbf_mode == PBMODE_VALUE_OF) {
-			if (vbfp->pbf_depth_counter > 0) {
-			    vbfp->pbf_depth_counter -= 1;
-			    break;
-			}
-			/* The matched element itself is closing */
+		    if (vbfp->pbf_mode == PBMODE_VALUE_OF
+			    && pip->pin_depth == vbfp->pbf_copy_depth) {
+			pin_body_close_match(parsep, vbfp, data, localp);
 			vbfp->pbf_mode = PBMODE_EXEC;
 			pin_body_exec_advance(parsep);
 			break;
@@ -3495,10 +3802,9 @@ pin_parse (pin_parse_t *parsep)
 	    }
 
 	    /*
-	     * PBMODE_FOR_EACH_STREAM bypass: the close of a dropped child
-	     * just unwinds the counter.  At zero it is the matched element
-	     * itself, which was never opened, so the loop is done: resume
-	     * the body after the for-each.  (An item's close, in
+	     * PBMODE_FOR_EACH_STREAM bypass: at pbf_copy_depth the matched
+	     * element itself is closing, so the loop is done: resume the
+	     * body after the for-each.  (An item's close, in
 	     * PBMODE_FOR_EACH_ITEM, goes through pin_insert_close.)
 	     */
 	    {
@@ -3506,11 +3812,9 @@ pin_parse (pin_parse_t *parsep)
 		if (sbody->pbe_depth > 0) {
 		    pin_body_frame_t *sbfp =
 			&sbody->pbe_stack[sbody->pbe_depth - 1];
-		    if (sbfp->pbf_mode == PBMODE_FOR_EACH_STREAM) {
-			if (sbfp->pbf_depth_counter > 0) {
-			    sbfp->pbf_depth_counter -= 1;
-			    break;
-			}
+		    if (sbfp->pbf_mode == PBMODE_FOR_EACH_STREAM
+			    && pip->pin_depth == sbfp->pbf_copy_depth) {
+			pin_body_close_match(parsep, sbfp, data, localp);
 			sbfp->pbf_position = 0;
 			sbfp->pbf_stream_ops = 0;
 			sbfp->pbf_mode = PBMODE_EXEC;
@@ -3522,8 +3826,8 @@ pin_parse (pin_parse_t *parsep)
 
 	    /*
 	     * PBMODE_APPLY bypass: the element that triggered apply-templates
-	     * was never opened in the output tree, so its close must be
-	     * intercepted here.  We match on name and output depth (which
+	     * was never opened in the output, so its close must be
+	     * intercepted here.  We match on name and input depth (which
 	     * returns to pbf_copy_depth after all children are processed).
 	     */
 	    {
@@ -3538,6 +3842,7 @@ pin_parse (pin_parse_t *parsep)
 				&& pin_name_id_equal(close_id,
 						     abfp->pbf_match_name)
 				&& pip->pin_depth == abfp->pbf_copy_depth) {
+			    pin_body_close_match(parsep, abfp, data, localp);
 			    abfp->pbf_mode = PBMODE_EXEC;
 			    pin_body_exec_advance(parsep);
 			    break;
@@ -3708,6 +4013,12 @@ void
 pin_parse_dump (pin_parse_t *parsep)
 {
     pin_parse_emit(parsep, pin_parse_dump_cb, NULL);
+}
+
+uint32_t
+pin_parse_store_high_water (pin_parse_t *parsep)
+{
+    return parsep->pp_insert->pin_live_max;
 }
 
 static int
@@ -3952,40 +4263,29 @@ pin_parse_output_finish (pin_parse_t *parsep)
 }
 
 /*
- * The writer that content in the top frame goes to, or NULL if it
+ * The writer that content in frame "psp" goes to, or NULL if it
  * doesn't go to the output (no sink attached, or the frame is
  * retained input or discarded).
  */
 static pin_output_writer_t *
-pin_parse_emit_writer (pin_parse_t *parsep, pin_depth_t depth)
+pin_parse_emit_writer (pin_parse_t *parsep, pin_istack_t *psp)
 {
-    pin_insert_t *pip = parsep->pp_insert;
-
-    if (parsep->pp_dests == NULL
-	    || !(pip->pin_stack[depth].ps_emit & PSE_CONTENT))
+    if (parsep->pp_dests == NULL || !(psp->ps_emit & PSE_CONTENT))
 	return NULL;
 
     return pin_output_stack_top(parsep->pp_dests);
 }
 
 /*
- * The element just opened (now on top of the stack) goes to the
- * output if its parent's content does.  Its attributes and namespaces
- * were inserted with it, so they are its first children.
+ * Send the element just opened to the output "wrp".  Its attributes
+ * and namespaces were inserted with it, so they are its first
+ * children.
  */
 static void
-pin_insert_emit_open (pin_parse_t *parsep, pin_node_t *nodep)
+pin_insert_emit_open (pin_parse_t *parsep, pin_output_writer_t *wrp,
+		      pin_node_t *nodep)
 {
     pin_insert_t *pip = parsep->pp_insert;
-
-    if (pip->pin_depth == 0)
-	return;
-
-    pin_output_writer_t *wrp = pin_parse_emit_writer(parsep,
-						     pip->pin_depth - 1);
-    if (wrp == NULL)
-	return;
-
     pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
     pin_parse_emit_sink_t pes = {
 	.pes_writer = wrp,
@@ -4011,21 +4311,19 @@ pin_insert_emit_open (pin_parse_t *parsep, pin_node_t *nodep)
 	pin_parse_emit_sink_cb(parsep, childp->pn_type, cid, childp, cp, &pes);
 	cid = childp->pn_next;
     }
-
-    pip->pin_stack[pip->pin_depth].ps_emit = PSE_CONTENT | PSE_OPEN;
 }
 
 /*
  * Text (or a comment or PI, in the store's "target\ncontent" form)
- * goes to the output if the top frame's content does.  "data" is
- * NUL-terminated.
+ * goes to the output if the innermost element's content does.  "data"
+ * is NUL-terminated.
  */
 static void
 pin_insert_emit_text (pin_parse_t *parsep, const char *data, size_t len,
 		      pin_node_type_t type)
 {
     pin_output_writer_t *wrp = pin_parse_emit_writer(parsep,
-					     parsep->pp_insert->pin_depth);
+				    pin_insert_top_frame(parsep->pp_insert));
     if (wrp == NULL)
 	return;
 
@@ -4055,19 +4353,18 @@ pin_insert_emit_text (pin_parse_t *parsep, const char *data, size_t len,
 }
 
 /*
- * An attribute added to the element on top of the stack after it was
- * opened.
+ * An attribute added to the innermost element after it was opened.
  */
 static void
 pin_insert_emit_attrib (pin_parse_t *parsep, const char *name,
 			const char *value)
 {
-    pin_insert_t *pip = parsep->pp_insert;
+    pin_istack_t *psp = pin_insert_top_frame(parsep->pp_insert);
 
-    if (!(pip->pin_stack[pip->pin_depth].ps_emit & PSE_OPEN))
+    if (!(psp->ps_emit & PSE_OPEN))
 	return;
 
-    pin_output_writer_t *wrp = pin_parse_emit_writer(parsep, pip->pin_depth);
+    pin_output_writer_t *wrp = pin_parse_emit_writer(parsep, psp);
     if (wrp)
 	pin_output_attrib(wrp, NULL, NULL, name, value);
 }
@@ -4130,12 +4427,6 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 	    func(parsep, nodep->pn_type, node_atom, nodep, NULL, opaque);
 
 	} else if (nodep->pn_type == PIN_TYPE_ELT) {
-	    if (nodep->pn_flags & PNF_TRANSIENT) {
-		last_depth = nodep->pn_depth;
-		node_atom = nodep->pn_next;
-		continue;
-	    }
-
 	    cp = pin_namepool_string(pwp, nodep->pn_name);
 	    func(parsep, nodep->pn_type, node_atom, nodep, cp, opaque);
 
@@ -4154,15 +4445,6 @@ pin_parse_emit (pin_parse_t *parsep, pin_parse_emit_fn func, void *opaque)
 		need_eol_attrib = TRUE;
 		next_node_atom = pin_node_id(nodep->pn_contents);
 	    }
-
-	} else if ((nodep->pn_type == PIN_TYPE_TEXT
-		    || nodep->pn_type == PIN_TYPE_UNESC
-		    || nodep->pn_type == PIN_TYPE_COMMENT
-		    || nodep->pn_type == PIN_TYPE_PI)
-		   && (nodep->pn_flags & PNF_TRANSIENT)) {
-	    last_depth = nodep->pn_depth;
-	    node_atom = nodep->pn_next;
-	    continue;
 
 	} else if (nodep->pn_type == PIN_TYPE_TEXT
 		   || nodep->pn_type == PIN_TYPE_UNESC) {
