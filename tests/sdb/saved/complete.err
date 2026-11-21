@@ -1,0 +1,14 @@
+Type 'help' for help
+(sdb) complete br
+break
+(sdb) complete b
+backtrace
+break
+bt
+(sdb) complete clear 
+watch
+(sdb) complete clear wa
+watch
+(sdb) complete badword
+(sdb) complete break 5 ex
+(sdb) quit
