@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.91.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" version="1.0" extension-element-prefixes="slax-ext">
+
+  <!--
+    A with-param body and a global var body each build a fragment.
+    The global's lives for the whole run.  Matches xsltproc.
+    Expected (one line):
+      <shown><pp>param</pp><pp>a</pp><str>parama</str></shown><o><gl>global</gl><again>global</again></o>
+  -->
+
+  <xsl:variable name="g">
+    <gl>global</gl>
+  </xsl:variable>
+  <xsl:template match="catalog">
+    <xsl:variable name="slax-temp-arg-1">
+      <pp>param</pp>
+      <pp>
+        <xsl:value-of select="thing[1]/name"/>
+      </pp>
+    </xsl:variable>
+    <xsl:call-template name="show">
+      <xsl:with-param xmlns:slax-ext="http://xmlsoft.org/XSLT/namespace" name="p" select="slax-ext:node-set($slax-temp-arg-1)"/>
+    </xsl:call-template>
+    <o>
+      <xsl:copy-of select="$g"/>
+      <again>
+        <xsl:value-of select="$g"/>
+      </again>
+    </o>
+  </xsl:template>
+  <xsl:template name="show">
+    <xsl:param name="p"/>
+    <shown>
+      <xsl:copy-of select="$p"/>
+      <str>
+        <xsl:value-of select="$p"/>
+      </str>
+    </shown>
+  </xsl:template>
+</xsl:stylesheet>

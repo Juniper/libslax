@@ -1,0 +1,12 @@
+compiled 1 pattern
+<out>
+   <copied>
+      <thing>
+         <name>a</name>
+      </thing>
+      <thing>
+         <name>b</name>
+      </thing>
+   </copied>
+   <names>ab</names>
+</out>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.90.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
+
+  <!--
+    mvar append follows libslax: a string appended to a string
+    concatenates; a node set appended to a string drops the string;
+    a string appended to a node set becomes <text>, unless it is
+    empty.  A var bound to the mvar sees later appends.  Matches
+    xsltproc.
+    Expected (one line):
+      <c1>string</c1><out><c><thing><name>a</name></thing><thing><name>b</name></thing><text>tail</text><last/></c><alias><thing><name>a</name></thing><thing><name>b</name></thing><text>tail</text><last/></alias><s><after/></s></out>
+  -->
+
+  <xsl:template match="catalog">
+    <xsl:variable name="slax-c" mvarname="c"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="c" mutable="yes" select="slax:mvar-init(&quot;c&quot;, &quot;slax-c&quot;, $slax-c)" svarname="slax-c"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c" select="&quot;str&quot;"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c" select="&quot;ing&quot;"/>
+    <c1>
+      <xsl:value-of select="$c"/>
+    </c1>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c" select="thing"/>
+    <xsl:variable name="alias" select="$c"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c" select="&quot;tail&quot;"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c" select="&quot;&quot;"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="c" svarname="slax-c">
+      <last/>
+    </slax:append-to-variable>
+    <xsl:variable name="slax-s" mvarname="s"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="s" select="slax:mvar-init(&quot;s&quot;, &quot;slax-s&quot;, $slax-s, &quot;pre&quot;)" mutable="yes" svarname="slax-s"/>
+    <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="s" svarname="slax-s">
+      <after/>
+    </slax:append-to-variable>
+    <out>
+      <c>
+        <xsl:copy-of select="$c"/>
+      </c>
+      <alias>
+        <xsl:copy-of select="$alias"/>
+      </alias>
+      <s>
+        <xsl:copy-of select="$s"/>
+      </s>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

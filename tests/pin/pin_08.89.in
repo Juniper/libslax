@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.89.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
+
+  <!--
+    An mvar with a body starts as a fragment, append adds to its end
+    once per loop item, and set replaces it with a new one.  Matches
+    xsltproc.
+    Expected (one line):
+      <out><x><one>thing</one><top>a</top><top>b</top></x><y><new>n</new></y></out>
+  -->
+
+  <xsl:template match="catalog">
+    <xsl:variable name="slax-x" mvarname="x"/>
+    <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-x" mvarname="x">
+      <one>thing</one>
+    </xsl:variable>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="x" mutable="yes" select="slax:mvar-init(&quot;x&quot;, &quot;slax-x&quot;, $slax-init-x)" svarname="slax-x" ivarname="slax-init-x"/>
+    <xsl:for-each select="thing">
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="x" svarname="slax-x">
+        <top>
+          <xsl:value-of select="name"/>
+        </top>
+      </slax:append-to-variable>
+    </xsl:for-each>
+    <xsl:variable name="slax-y" mvarname="y"/>
+    <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="slax-init-y" mvarname="y">
+      <old/>
+    </xsl:variable>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="y" mutable="yes" select="slax:mvar-init(&quot;y&quot;, &quot;slax-y&quot;, $slax-init-y)" svarname="slax-y" ivarname="slax-init-y"/>
+    <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="y" svarname="slax-y">
+      <new>n</new>
+    </slax:set-variable>
+    <out>
+      <x>
+        <xsl:copy-of select="$x"/>
+      </x>
+      <y>
+        <xsl:copy-of select="$y"/>
+      </y>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

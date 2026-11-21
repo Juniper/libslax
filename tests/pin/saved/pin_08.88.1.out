@@ -1,0 +1,10 @@
+compiled 1 pattern
+<out>
+   <top>a</top>
+   <top>b</top>
+   <str>ab</str>
+   <wrap>
+      <in>deep</in>
+      <inner-str>deep</inner-str>
+   </wrap>
+</out>

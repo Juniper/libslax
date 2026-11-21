@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.93.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Loops over more than 4096 items (5002 "t" elements), each calling
+    a named template: a path loop, a sorted loop and a plain child
+    loop.  Only the first and last items have an "a" attribute, so
+    a dropped item shows up as a missing "k".  Matches xsltproc.
+    Expected (one line):
+      <out><k>first</k><k>last</k><k>last</k><k>first</k><k>first</k><k>last</k></out>
+  -->
+
+  <xsl:template match="top">
+    <out>
+      <xsl:for-each select="g/t">
+        <xsl:call-template name="k"/>
+      </xsl:for-each>
+      <xsl:for-each select="g">
+        <xsl:for-each select="t">
+          <xsl:sort select="@a" order="descending"/>
+          <xsl:call-template name="k"/>
+        </xsl:for-each>
+      </xsl:for-each>
+      <xsl:for-each select="g">
+        <xsl:for-each select="t">
+          <xsl:call-template name="k"/>
+        </xsl:for-each>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+  <xsl:template name="k">
+    <xsl:if test="@a">
+      <k>
+        <xsl:value-of select="@a"/>
+      </k>
+    </xsl:if>
+  </xsl:template>
+</xsl:stylesheet>

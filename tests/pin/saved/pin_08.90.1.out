@@ -1,0 +1,27 @@
+compiled 1 pattern
+<c1>string</c1>
+<out>
+   <c>
+      <thing>
+         <name>a</name>
+      </thing>
+      <thing>
+         <name>b</name>
+      </thing>
+      <text>tail</text>
+      <last/>
+   </c>
+   <alias>
+      <thing>
+         <name>a</name>
+      </thing>
+      <thing>
+         <name>b</name>
+      </thing>
+      <text>tail</text>
+      <last/>
+   </alias>
+   <s>
+      <after/>
+   </s>
+</out>

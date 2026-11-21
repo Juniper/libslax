@@ -1,0 +1,11 @@
+compiled 1 pattern
+<out>
+   <x>
+      <one>thing</one>
+      <top>a</top>
+      <top>b</top>
+   </x>
+   <y>
+      <new>n</new>
+   </y>
+</out>

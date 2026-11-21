@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.88.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    A var with a body builds a fragment.  copy-of replays it, its
+    string value is all its text, and a var with a body inside another
+    var's body builds its own fragment.  Matches xsltproc.
+    Expected (one line):
+      <out><top>a</top><top>b</top><str>ab</str><wrap><in>deep</in><inner-str>deep</inner-str></wrap></out>
+  -->
+
+  <xsl:template match="catalog">
+    <xsl:variable name="f">
+      <xsl:for-each select="thing">
+        <top>
+          <xsl:value-of select="name"/>
+        </top>
+      </xsl:for-each>
+    </xsl:variable>
+    <xsl:variable name="outer">
+      <wrap>
+        <xsl:variable name="inner">
+          <in>deep</in>
+        </xsl:variable>
+        <xsl:copy-of select="$inner"/>
+        <inner-str>
+          <xsl:value-of select="$inner"/>
+        </inner-str>
+      </wrap>
+    </xsl:variable>
+    <out>
+      <xsl:copy-of select="$f"/>
+      <str>
+        <xsl:value-of select="$f"/>
+      </str>
+      <xsl:copy-of select="$outer"/>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

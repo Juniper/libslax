@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.92.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Input copied into a fragment is a copy: it is still there after
+    the input it came from is gone.  Matches xsltproc.
+    Expected (one line):
+      <out><copied><thing><name>a</name></thing><thing><name>b</name></thing></copied><names>ab</names></out>
+  -->
+
+  <xsl:template match="catalog">
+    <xsl:variable name="f">
+      <copied>
+        <xsl:copy-of select="thing"/>
+      </copied>
+    </xsl:variable>
+    <out>
+      <xsl:copy-of select="$f"/>
+      <names>
+        <xsl:value-of select="$f"/>
+      </names>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>
