@@ -2393,16 +2393,18 @@ pin_compile_build (xmlNodePtr body_node, pin_op_cursor_t *cur)
 }
 
 /*
- * Emit STORE_VAR for "name".  Returns 0 or -1.
+ * Emit "type" (STORE_VAR to declare, SET_VAR to assign) for "name".
+ * Returns 0 or -1.
  */
 static int
-pin_compile_store_var (pin_op_cursor_t *cur, const char *name)
+pin_compile_store_var (pin_op_cursor_t *cur, const char *name,
+		       pin_op_type_t type)
 {
     pin_op_t *store = pin_op_new(cur, NULL);
     if (store == NULL)
 	return -1;
 
-    store->po_type = PIN_OP_STORE_VAR;
+    store->po_type = type;
     store->po_name = pin_namepool_atom(cur->poc_rb->prb_workspace, name, TRUE);
     return 0;
 }
@@ -2435,7 +2437,8 @@ pin_compile_mvar_update (xmlNodePtr child, pin_op_cursor_t *cur,
 	    rc = pin_compile_build(child, cur);
 
 	if (rc == 0)
-	    rc = pin_compile_store_var(cur, (const char *) vname);
+	    rc = pin_compile_store_var(cur, (const char *) vname,
+				       PIN_OP_SET_VAR);
 	goto out;
     }
 
@@ -3044,7 +3047,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 
 	    if (rc == 0)
-		rc = pin_compile_store_var(cur, (const char *) vname);
+		rc = pin_compile_store_var(cur, (const char *) vname,
+					   PIN_OP_STORE_VAR);
 
 	    free(init);
 	    if (sel)
@@ -3797,7 +3801,7 @@ pin_compile_global_build (xmlNodePtr child, pin_rulebook_t *rb,
 
     uint32_t seeded = pin_compile_ns_seed(child, &cur);
     if (pin_compile_build(child, &cur) == 0)
-	pin_compile_store_var(&cur, name);
+	pin_compile_store_var(&cur, name, PIN_OP_STORE_VAR);
     if (seeded)
 	pin_compile_ns_pop(&cur, seeded);
     free(cur.poc_ns_stack);

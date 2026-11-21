@@ -411,13 +411,7 @@ pin_filter_data_variable_of (xo_filter_data_t *dp, const char *name, ssize_t nle
     uint32_t atom = pin_name_id_atom_of(var_name);
 
     pin_exec_state_t *esp = dp->xfd_esp;
-    pin_var_binding_t *vp = NULL;
-    for (uint32_t i = 0; i < esp->pes_var_count; i++) {
-	if (esp->pes_vars[i].pvb_name == atom) {
-	    vp = &esp->pes_vars[i];
-	    break;
-	}
-    }
+    pin_var_binding_t *vp = pin_exec_var_find(esp, atom);
     if (vp == NULL)
 	return NULL;
 

@@ -91,7 +91,7 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_CALL        (PIN_OP_MAX_COMPLEX + 13) /* Invoke named template (future) */
 #define PIN_OP_RETURN      (PIN_OP_MAX_COMPLEX + 14) /* Return from named template (future) */
 #define PIN_OP_DISCARD     (PIN_OP_MAX_COMPLEX + 15) /* Pop and discard top of value stack */
-#define PIN_OP_STORE_VAR   (PIN_OP_MAX_COMPLEX + 16) /* Pop top; bind to variable named po_name */
+#define PIN_OP_STORE_VAR   (PIN_OP_MAX_COMPLEX + 16) /* Pop top; declare variable po_name in this scope */
 #define PIN_OP_LOAD_VAR    (PIN_OP_MAX_COMPLEX + 17) /* Push value of variable named po_name */
 #define PIN_OP_FOR_EACH    (PIN_OP_MAX_COMPLEX + 18) /* Iterate matching children (po_name=tag, po_alt=body, po_name2=sort-spec) */
 #define PIN_OP_COPY_OF     (PIN_OP_MAX_COMPLEX + 19) /* Deep copy selected nodes to output (po_name=path or null for ".") */
@@ -116,7 +116,8 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_APPEND_OPEN   (PIN_OP_MAX_COMPLEX + 38) /* Send output to the end of variable po_name's fragment */
 #define PIN_OP_APPEND_VALUE  (PIN_OP_MAX_COMPLEX + 39) /* Pop a value and send it to the output, as an mvar append does */
 #define PIN_OP_APPEND_CLOSE  (PIN_OP_MAX_COMPLEX + 40) /* End the append */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 41) /* Sentinel: number of defined op codes */
+#define PIN_OP_SET_VAR       (PIN_OP_MAX_COMPLEX + 41) /* Pop top; assign to the visible variable po_name */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 42) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -208,9 +209,9 @@ typedef struct pin_exec_iter_s {
 typedef struct pin_exec_seq_frame_s {
     pin_op_id_t   psf_pc;        /* Next op to execute */
     pin_node_id_t psf_context;   /* Retained matched element node */
-    uint32_t      psf_saved_var_count;     /* CALL frame: caller's var watermark */
-    uint32_t      psf_saved_nodeset_count; /* CALL frame: caller's nodeset watermark */
-    uint32_t      psf_saved_frag_count;    /* CALL frame: caller's fragment watermark */
+    uint32_t      psf_saved_var_count;     /* Var count when the scope began */
+    uint32_t      psf_saved_nodeset_count; /* Nodeset count when the scope began */
+    uint32_t      psf_saved_frag_count;    /* Fragment count when the scope began */
     uint32_t      psf_param_base;          /* CALL frame: index of first pending param */
     uint32_t      psf_param_count;         /* CALL frame: number of pending params */
     uint8_t       psf_is_call;             /* 1 = CALL frame; restore scope on pop */
@@ -314,6 +315,10 @@ int pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
 int pin_exec_push (pin_exec_state_t *esp, pin_value_t val);
 pin_value_t pin_exec_pop (pin_exec_state_t *esp);
 pin_value_t pin_exec_peek (pin_exec_state_t *esp);
+
+/* The newest binding of variable "name_atom", or NULL */
+pin_var_binding_t *pin_exec_var_find (pin_exec_state_t *esp,
+				      uint32_t name_atom);
 
 /* Nodeset table helpers */
 uint32_t pin_exec_nodeset_alloc (pin_exec_state_t *esp);

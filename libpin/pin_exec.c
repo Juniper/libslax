@@ -113,24 +113,25 @@ pin_exec_nodeset_is_true (pin_exec_state_t *esp, pin_value_t v)
 }
 
 /*
- * Variable bindings: find an existing slot by name atom, or allocate a new one.
+ * Variable bindings are a stack.  Each frame records the count when
+ * its scope began, and the count goes back there when the scope ends
+ * (a call returns, or a loop moves to its next item).  A lookup finds
+ * the newest binding, so an inner declaration hides an outer one.
  */
-static pin_var_binding_t *
+pin_var_binding_t *
 pin_exec_var_find (pin_exec_state_t *esp, uint32_t name_atom)
 {
-    for (uint32_t i = 0; i < esp->pes_var_count; i++) {
-        if (esp->pes_vars[i].pvb_name == name_atom)
-            return &esp->pes_vars[i];
+    for (uint32_t i = esp->pes_var_count; i > 0; i--) {
+        if (esp->pes_vars[i - 1].pvb_name == name_atom)
+            return &esp->pes_vars[i - 1];
     }
     return NULL;
 }
 
 static pin_var_binding_t *
-pin_exec_var_alloc (pin_exec_state_t *esp, uint32_t name_atom)
+pin_exec_var_new (pin_exec_state_t *esp, uint32_t name_atom)
 {
-    pin_var_binding_t *vp = pin_exec_var_find(esp, name_atom);
-    if (vp)
-        return vp;
+    pin_var_binding_t *vp;
 
     if (esp->pes_var_count >= esp->pes_var_size) {
         int newsize = esp->pes_var_size ? esp->pes_var_size * 2 : 8;
@@ -147,6 +148,35 @@ pin_exec_var_alloc (pin_exec_state_t *esp, uint32_t name_atom)
     vp->pvb_value = pin_value_null();
     esp->pes_var_count += 1;
     return vp;
+}
+
+/* The visible binding for an assignment, made if there is none */
+static pin_var_binding_t *
+pin_exec_var_alloc (pin_exec_state_t *esp, uint32_t name_atom)
+{
+    pin_var_binding_t *vp = pin_exec_var_find(esp, name_atom);
+    if (vp)
+        return vp;
+
+    return pin_exec_var_new(esp, name_atom);
+}
+
+/*
+ * The binding for a declaration in the current scope.  A binding
+ * from an outer scope is hidden, not changed.
+ */
+static pin_var_binding_t *
+pin_exec_var_bind (pin_exec_state_t *esp, uint32_t name_atom)
+{
+    uint32_t base = (esp->pes_seq_top > 0)
+        ? esp->pes_seq[esp->pes_seq_top - 1].psf_saved_var_count : 0;
+
+    for (uint32_t i = esp->pes_var_count; i > base; i--) {
+        if (esp->pes_vars[i - 1].pvb_name == name_atom)
+            return &esp->pes_vars[i - 1];
+    }
+
+    return pin_exec_var_new(esp, name_atom);
 }
 
 /*
@@ -638,6 +668,17 @@ static pin_value_t
 pin_op_store_var (PIN_OP_FUNC_ARGS)
 {
     pin_value_t v = pin_exec_pop(esp);
+    pin_var_binding_t *vp = pin_exec_var_bind(esp,
+            pin_name_id_atom_of(opp->po_name));
+    if (vp)
+        vp->pvb_value = v;
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_set_var (PIN_OP_FUNC_ARGS)
+{
+    pin_value_t v = pin_exec_pop(esp);
     pin_var_binding_t *vp = pin_exec_var_alloc(esp,
             pin_name_id_atom_of(opp->po_name));
     if (vp)
@@ -785,8 +826,8 @@ pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
     esp->pes_seq[top].psf_pc = pc;
     esp->pes_seq[top].psf_context = ctx;
     esp->pes_seq[top].psf_is_call = 0;
-    esp->pes_seq[top].psf_saved_var_count = 0;
-    esp->pes_seq[top].psf_saved_nodeset_count = 0;
+    esp->pes_seq[top].psf_saved_var_count = esp->pes_var_count;
+    esp->pes_seq[top].psf_saved_nodeset_count = esp->pes_nodeset_count;
     esp->pes_seq[top].psf_saved_frag_count = esp->pes_frag_count;
     esp->pes_seq[top].psf_param_base = 0;
     esp->pes_seq[top].psf_param_count = 0;
@@ -2068,6 +2109,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_APPEND_OPEN]   = { "append-open",   pin_op_append_open,   0 },
     [PIN_OP_APPEND_VALUE]  = { "append-value",  pin_op_append_value,  0 },
     [PIN_OP_APPEND_CLOSE]  = { "append-close",  pin_op_append_close,  0 },
+    [PIN_OP_SET_VAR]       = { "set-var",       pin_op_set_var,       0 },
 };
 
 /*
@@ -2106,6 +2148,36 @@ pin_exec_seq_grow (pin_exec_state_t *esp)
 }
 
 /*
+ * End one item of the loop in frame "top": drop the variables its
+ * body declared, and free the node sets and fragments it made, so a
+ * loop runs in space that doesn't grow with its item count.  If a
+ * variable that outlives the item (an mvar the body assigned) holds
+ * one of them, they are all kept until the enclosing scope ends.
+ */
+static void
+pin_exec_item_end (pin_exec_state_t *esp, pin_parse_t *parsep, int top)
+{
+    pin_exec_seq_frame_t *sfp = &esp->pes_seq[top];
+    uint32_t snc = sfp->psf_saved_nodeset_count;
+
+    esp->pes_var_count = sfp->psf_saved_var_count;
+
+    for (uint32_t i = 0; i < esp->pes_var_count; i++) {
+        pin_value_t v = esp->pes_vars[i].pvb_value;
+        if (v.pv_type == PVT_NODESET && v.pv_atom >= snc) {
+            sfp->psf_saved_nodeset_count = esp->pes_nodeset_count;
+            sfp->psf_saved_frag_count = esp->pes_frag_count;
+            return;
+        }
+    }
+
+    for (uint32_t i = snc; i < esp->pes_nodeset_count; i++)
+        pin_exec_nodeset_free(esp, i);
+    esp->pes_nodeset_count = snc;
+    pin_exec_frags_free(esp, parsep, sfp->psf_saved_frag_count);
+}
+
+/*
  * Shared core for pin_exec_run() / pin_exec_run_call(): push one seq frame
  * for 'start' and drain the dispatch loop until that frame (and anything
  * it calls) finishes.  is_call/param_base/param_count mirror what
@@ -2137,8 +2209,8 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     esp->pes_seq[top].psf_pc = start;
     esp->pes_seq[top].psf_context = context_node;
     esp->pes_seq[top].psf_is_call = is_call;
-    esp->pes_seq[top].psf_saved_var_count = 0;
-    esp->pes_seq[top].psf_saved_nodeset_count = 0;
+    esp->pes_seq[top].psf_saved_var_count = saved_var_count;
+    esp->pes_seq[top].psf_saved_nodeset_count = saved_nodeset_count;
     esp->pes_seq[top].psf_saved_frag_count = saved_frag_count;
     esp->pes_seq[top].psf_param_base = param_base;
     esp->pes_seq[top].psf_param_count = param_count;
@@ -2152,6 +2224,7 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
         if (pin_op_id_is_null(pc)) {
             pin_exec_iter_t *iterp = esp->pes_seq[top].psf_iter;
             if (iterp) {
+                pin_exec_item_end(esp, parsep, top);
                 pin_node_id_t item = pin_exec_iter_next(esp, parsep, iterp,
                                                         &pc);
                 if (!pin_node_id_is_null(item)) {
