@@ -1,0 +1,13 @@
+compiled 2 patterns
+<out>
+   <in>callee</in>
+   <after>caller</after>
+   <s>
+      <w>3</w>
+   </s>
+   <a>
+      <x>1</x>
+      <x>2</x>
+      <x>3</x>
+   </a>
+</out>
