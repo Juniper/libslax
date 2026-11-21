@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.94.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:slax="http://xml.libslax.org/slax" version="1.0" extension-element-prefixes="slax">
+
+  <!--
+    A var declared in a loop body is dropped after each item, and a
+    callee's var hides the caller's var of the same name without
+    changing it.  An mvar set or appended in the loop keeps the
+    fragments the items made.  Matches slaxproc.
+    Expected (one line):
+      <out><in>callee</in><after>caller</after><s><w>3</w></s><a><x>1</x><x>2</x><x>3</x></a></out>
+  -->
+
+  <xsl:template match="top">
+    <xsl:variable name="x" select="&quot;caller&quot;"/>
+    <xsl:variable name="slax-s" mvarname="s"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="s" mutable="yes" select="slax:mvar-init(&quot;s&quot;, &quot;slax-s&quot;, $slax-s)" svarname="slax-s"/>
+    <xsl:variable name="slax-a" mvarname="a"/>
+    <xsl:variable xmlns:slax="http://xml.libslax.org/slax" name="a" mutable="yes" select="slax:mvar-init(&quot;a&quot;, &quot;slax-a&quot;, $slax-a)" svarname="slax-a"/>
+    <xsl:for-each select="t">
+      <xsl:variable name="v">
+        <w>
+          <xsl:value-of select="n"/>
+        </w>
+      </xsl:variable>
+      <slax:set-variable xmlns:slax="http://xml.libslax.org/slax" name="s" svarname="slax-s" select="$v"/>
+      <slax:append-to-variable xmlns:slax="http://xml.libslax.org/slax" name="a" svarname="slax-a">
+        <x>
+          <xsl:value-of select="n"/>
+        </x>
+      </slax:append-to-variable>
+    </xsl:for-each>
+    <out>
+      <xsl:call-template name="k"/>
+      <after>
+        <xsl:value-of select="$x"/>
+      </after>
+      <s>
+        <xsl:copy-of select="$s"/>
+      </s>
+      <a>
+        <xsl:copy-of select="$a"/>
+      </a>
+    </out>
+  </xsl:template>
+  <xsl:template name="k">
+    <xsl:variable name="x" select="&quot;callee&quot;"/>
+    <in>
+      <xsl:value-of select="$x"/>
+    </in>
+  </xsl:template>
+</xsl:stylesheet>
