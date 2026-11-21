@@ -101,6 +101,7 @@ ISOCLINE_AMALGAM_SRCS = \
     ${ISOCLINE_DIR}/src/highlight.c \
     ${ISOCLINE_DIR}/src/undo.c \
     ${ISOCLINE_DIR}/src/history.c \
+    ${ISOCLINE_DIR}/src/keybind.c \
     ${ISOCLINE_DIR}/src/completers.c \
     ${ISOCLINE_DIR}/src/completions.c \
     ${ISOCLINE_DIR}/src/term.c \
