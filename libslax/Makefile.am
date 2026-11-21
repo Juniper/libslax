@@ -87,6 +87,32 @@ slaxparser.h: slaxparser.c
 ${libslax_la_SOURCES:.c=.o}: ${SLAXHEADERS}
 ${libslax_la_SOURCES:.c=.lo}: ${SLAXHEADERS}
 
+if WITH_ISOCLINE
+AM_CFLAGS += ${ISOCLINE_CFLAGS}
+libslax_la_SOURCES += slaxisocline.c
+
+ISOCLINE_AMALGAM_SRCS = \
+    ${ISOCLINE_DIR}/src/attr.c \
+    ${ISOCLINE_DIR}/src/bbcode.c \
+    ${ISOCLINE_DIR}/src/editline.c \
+    ${ISOCLINE_DIR}/src/editline_help.c \
+    ${ISOCLINE_DIR}/src/editline_history.c \
+    ${ISOCLINE_DIR}/src/editline_completion.c \
+    ${ISOCLINE_DIR}/src/highlight.c \
+    ${ISOCLINE_DIR}/src/undo.c \
+    ${ISOCLINE_DIR}/src/history.c \
+    ${ISOCLINE_DIR}/src/completers.c \
+    ${ISOCLINE_DIR}/src/completions.c \
+    ${ISOCLINE_DIR}/src/term.c \
+    ${ISOCLINE_DIR}/src/tty_esc.c \
+    ${ISOCLINE_DIR}/src/tty.c \
+    ${ISOCLINE_DIR}/src/stringbuf.c \
+    ${ISOCLINE_DIR}/src/common.c
+
+slaxisocline.$(OBJEXT): ${ISOCLINE_AMALGAM_SRCS}
+slaxisocline.lo: ${ISOCLINE_AMALGAM_SRCS}
+endif
+
 SED_ARGS = \
 -e 's:int yyparse (void);::' \
 -e 's/yyparse (void[^;]*/slaxParse (slax_data_t *slax_data)/' \
