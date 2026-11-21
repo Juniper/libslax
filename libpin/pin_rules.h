@@ -299,6 +299,8 @@ typedef struct pin_rulebook_s {
     uint32_t              prb_pending_call_count;
     uint32_t              prb_pending_call_size;
     pin_global_var_t     *prb_globals;    /* Array of global variables/params */
+    pin_op_id_t           prb_global_ops; /* Builds body-valued globals; run
+					     once, before the input */
     uint32_t              prb_global_count;
     uint32_t              prb_global_size;
     pin_output_settings_t prb_output;    /* Settings from xsl:output */

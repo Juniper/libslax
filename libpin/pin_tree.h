@@ -173,4 +173,11 @@ pin_tree_append_child (pin_workspace_t *pwp,
 		      pin_node_id_t parent_atom, pin_node_id_t last_hint,
 		      pin_node_id_t new_node_atom);
 
+/*
+ * Free the subtree at top_atom (already unlinked from any parent) and
+ * the text its nodes hold.  Returns the number of nodes freed.
+ */
+uint32_t
+pin_tree_free_subtree (pin_workspace_t *pwp, pin_node_id_t top_atom);
+
 #endif /* LIBSLAX_PIN_TREE_H */

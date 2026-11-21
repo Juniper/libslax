@@ -36,6 +36,8 @@
 #include <libpin/pin_parse.h>
 #include <libpin/pin_sort.h>
 #include <libpin/pin_filter.h>
+#include <libpin/pin_output.h>
+#include <libpin/pin_output_store.h>
 #include <libxo/xo.h>
 #include <libxo/xo_filter.h>
 
@@ -44,20 +46,14 @@
  */
 
 /*
- * Collect all direct text children of the node at nid, concatenate them,
- * intern the result in the namepool, and return the atom.
- * Returns the null atom when the node has no text content.
+ * Append the text children of nodep to buf, in document order.  With
+ * "deep", text in descendant elements is included too.
  */
-pin_name_id_t
-pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
+static void
+pin_exec_text_collect (pin_workspace_t *pwp, pin_node_t *nodep,
+                       xo_buffer_t *bufp, pin_boolean_t deep)
 {
-    pin_node_t *nodep = pin_node_addr(pwp, nid);
-    if (nodep == NULL)
-        return pin_name_id_null_atom();
-
     pin_depth_t depth = nodep->pn_depth;
-    xo_buffer_t buf;
-    xo_buf_init(&buf);
 
     for (pin_node_id_t cid = pin_node_child(nodep); !pin_node_id_is_null(cid); ) {
         pin_node_t *child = pin_node_addr(pwp, cid);
@@ -68,11 +64,32 @@ pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
             const char *text = pin_textpool_string(pwp,
                     pa_arb_atom_of(pin_node_text(child)));
             if (text)
-                xo_buf_append(&buf, text, (ssize_t) strlen(text));
+                xo_buf_append(bufp, text, (ssize_t) strlen(text));
+        } else if (deep && child->pn_type == PIN_TYPE_ELT) {
+            pin_exec_text_collect(pwp, child, bufp, deep);
         }
 
         cid = child->pn_next;
     }
+}
+
+/*
+ * Collect the text of the node at nid, intern the result in the
+ * namepool, and return the atom.  An element gives its direct text
+ * children; a fragment gives all its text.  Returns the null atom
+ * when there is no text.
+ */
+pin_name_id_t
+pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
+{
+    pin_node_t *nodep = pin_node_addr(pwp, nid);
+    if (nodep == NULL)
+        return pin_name_id_null_atom();
+
+    xo_buffer_t buf;
+    xo_buf_init(&buf);
+
+    pin_exec_text_collect(pwp, nodep, &buf, nodep->pn_type == PIN_TYPE_ROOT);
 
     pin_name_id_t result = pin_name_id_null_atom();
     if (xo_buf_offset(&buf) > 0) {
@@ -770,8 +787,10 @@ pin_exec_push_seq_frame (pin_exec_state_t *esp, pin_op_id_t pc,
     esp->pes_seq[top].psf_is_call = 0;
     esp->pes_seq[top].psf_saved_var_count = 0;
     esp->pes_seq[top].psf_saved_nodeset_count = 0;
+    esp->pes_seq[top].psf_saved_frag_count = esp->pes_frag_count;
     esp->pes_seq[top].psf_param_base = 0;
     esp->pes_seq[top].psf_param_count = 0;
+    esp->pes_seq[top].psf_iter = NULL;
     esp->pes_seq_top += 1;
     return 0;
 }
@@ -1043,6 +1062,136 @@ pin_sort_encode_number (char *keybuf, size_t keycap, size_t pos,
 }
 
 /*
+ * The ops apply-templates runs for "child" in "mode", or the null atom
+ * if it has none.  A child with no matching rule is discarded, like the
+ * live PBMODE_APPLY dispatch does.
+ *
+ * pr_close_ops alone isn't enough: a rule that fell back to BIA_
+ * (pr_body) or a for-each state (pr_new_state) can still have a stale
+ * pr_close_ops from an abandoned op compile, so this makes the same
+ * three-way check as pin_parse_handle_rule.  The op engine runs against
+ * an already-retained subtree and has no live event stream to feed a
+ * BIA_ body, so such a child gets a warning and is skipped.
+ */
+static pin_op_id_t
+pin_exec_apply_ops (pin_workspace_t *pwp, pin_rulebook_t *rb,
+                    pin_name_id_t mode, pin_node_t *child)
+{
+    pin_rule_t *rule = pin_rulebook_apply_find(rb, mode, child->pn_name);
+    if (rule == NULL)
+        return pin_op_id_null_atom();
+
+    if (!pin_op_id_is_null(rule->pr_close_ops)
+            && pin_body_instr_id_is_null(rule->pr_body)
+            && pin_rstate_id_is_null(rule->pr_new_state))
+        return rule->pr_close_ops;
+
+    psu_log("pin_exec: apply-templates: matched template for \"%s\" "
+            "needs apply-templates/copy-of/for-each, which the "
+            "retained-subtree op engine does not support yet; skipping",
+            pin_namepool_string(pwp, child->pn_name));
+    return pin_op_id_null_atom();
+}
+
+/*
+ * The next item of a loop, or the null atom when there are no more.
+ * *pcp is set to the ops to run for it.
+ */
+static pin_node_id_t
+pin_exec_iter_next (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                    pin_exec_iter_t *iterp, pin_op_id_t *pcp)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+
+    *pcp = iterp->pei_body;
+
+    switch (iterp->pei_kind) {
+    case PEIK_NODESET:;
+        pin_ns_entry_t *nsp = &esp->pes_nodesets[iterp->pei_ns];
+        if (iterp->pei_pos >= nsp->pne_count)
+            break;
+
+        uint32_t pos = iterp->pei_pos;
+        iterp->pei_pos += 1;
+        return pin_node_id(nsp->pne_nodes[pos]);
+
+    case PEIK_SORTED:;
+        pin_stree_entry_t *ep = iterp->pei_entry;
+        if (ep == NULL)
+            break;
+
+        iterp->pei_entry = iterp->pei_desc
+            ? pin_stree_prev(iterp->pei_tree, ep)
+            : pin_stree_next(iterp->pei_tree, ep);
+        return ep->pse_node;
+
+    case PEIK_CHILD:
+    case PEIK_APPLY:
+        /*
+         * The last child's pn_next points back at the parent, so the
+         * walk ends on depth, not on a null link.
+         */
+        while (!pin_node_id_is_null(iterp->pei_next)) {
+            pin_node_id_t cid = iterp->pei_next;
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= iterp->pei_depth)
+                break;
+
+            iterp->pei_next = child->pn_next;
+            if (child->pn_type != PIN_TYPE_ELT)
+                continue;
+
+            if (iterp->pei_kind == PEIK_CHILD) {
+                if (pin_name_id_equal(child->pn_name, iterp->pei_name))
+                    return cid;
+                continue;
+            }
+
+            *pcp = pin_exec_apply_ops(pwp, parsep->pp_rulebook,
+                                      iterp->pei_name, child);
+            if (!pin_op_id_is_null(*pcp))
+                return cid;
+        }
+        iterp->pei_next = pin_node_id_null_atom();
+        break;
+    }
+
+    return pin_node_id_null_atom();
+}
+
+static void
+pin_exec_iter_free (pin_exec_state_t *esp, pin_exec_iter_t *iterp)
+{
+    if (iterp->pei_kind == PEIK_NODESET)
+        pin_exec_nodeset_free(esp, iterp->pei_ns);
+    else if (iterp->pei_kind == PEIK_SORTED)
+        pin_stree_free(iterp->pei_tree);
+
+    free(iterp);
+}
+
+/*
+ * Start a loop: push one frame for its first item, which keeps
+ * "iterp" and takes each next item from it.  The frame frees it when
+ * the loop ends.
+ */
+static void
+pin_exec_push_iter (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                    pin_exec_iter_t *iterp)
+{
+    pin_op_id_t pc;
+    pin_node_id_t item = pin_exec_iter_next(esp, parsep, iterp, &pc);
+
+    if (pin_node_id_is_null(item)
+            || pin_exec_push_seq_frame(esp, pc, item) < 0) {
+        pin_exec_iter_free(esp, iterp);
+        return;
+    }
+
+    esp->pes_seq[esp->pes_seq_top - 1].psf_iter = iterp;
+}
+
+/*
  * Build the sort key for child element child_id using the sort-key spec
  * string spec.  Each newline-separated key may carry leading flags:
  * '-' (descending), '^' (upper-first) and '#' (data-type="number").
@@ -1122,118 +1271,85 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
         }
     }
 
-    pin_stree_t *tree = has_sort ? pin_stree_create() : NULL;
+    pin_exec_iter_t *iterp = calloc(1, sizeof(*iterp));
+    if (iterp == NULL)
+        return pin_value_null();
 
-    pin_node_id_t *doc = NULL;
-    int doc_count = 0, doc_size = 0;
+    iterp->pei_body = opp->po_alt;
+    iterp->pei_name = opp->po_name;
 
     /*
-     * A multi-step path ("a/b/c") is collected in document order by
-     * pin_exec_collect_path(); a single step is matched directly
-     * against the context node's children below.
+     * A single step is matched against the context node's children as
+     * the loop goes.  A multi-step path ("a/b/c") is collected in
+     * document order by pin_exec_collect_path(), and a sorted loop
+     * needs all its items before the first one runs.
      */
     const char *path = pin_namepool_string(pwp, opp->po_name);
-    uint32_t ns_idx = UINT32_MAX;
     if (path && strchr(path, '/') != NULL) {
-        ns_idx = pin_exec_nodeset_alloc(esp);
-        if (ns_idx != UINT32_MAX)
-            pin_exec_collect_path(pwp, esp, parent_id, path, strlen(path),
-                                  ns_idx);
+        iterp->pei_ns = pin_exec_nodeset_alloc(esp);
+        if (iterp->pei_ns == UINT32_MAX) {
+            free(iterp);
+            return pin_value_null();
+        }
+        pin_exec_collect_path(pwp, esp, parent_id, path, strlen(path),
+                              iterp->pei_ns);
+        iterp->pei_kind = PEIK_NODESET;
+    } else {
+        iterp->pei_kind = PEIK_CHILD;
+        iterp->pei_depth = parent->pn_depth;
+        iterp->pei_next = pin_node_child(parent);
     }
 
-    pin_depth_t depth = parent->pn_depth;
-    uint32_t ns_pos = 0;
-    uint32_t key_seq = 0;
-    pin_node_id_t cid = pin_node_child(parent);
-
-    for (;;) {
-        pin_node_id_t match_id;
-
-        if (ns_idx != UINT32_MAX) {
-            pin_ns_entry_t *nsp = &esp->pes_nodesets[ns_idx];
-            if (ns_pos >= nsp->pne_count)
-                break;
-            match_id = pin_node_id(nsp->pne_nodes[ns_pos]);
-            ns_pos += 1;
-        } else {
-            if (pin_node_id_is_null(cid))
-                break;
-            pin_node_t *child = pin_node_addr(pwp, cid);
-            if (child == NULL || child->pn_depth <= depth)
-                break;
-            match_id = cid;
-            cid = child->pn_next;
-            if (child->pn_type != PIN_TYPE_ELT
-                    || !pin_name_id_equal(child->pn_name, opp->po_name))
-                continue;
+    if (has_sort) {
+        pin_stree_t *tree = pin_stree_create();
+        if (tree == NULL) {
+            pin_exec_iter_free(esp, iterp);
+            return pin_value_null();
         }
 
-        if (has_sort && tree) {
+        uint32_t key_seq = 0;
+        for (;;) {
+            pin_op_id_t pc;
+            pin_node_id_t match_id = pin_exec_iter_next(esp, parsep, iterp,
+                                                        &pc);
+            if (pin_node_id_is_null(match_id))
+                break;
+
             char keybuf[512];
             uint16_t klen = pin_for_each_build_key(pwp, match_id, spec,
                                                    key_seq, keybuf,
                                                    sizeof(keybuf));
-            key_seq += 1;
-
-            /* XXX deal with failure (klen < 0?) */
-            pin_stree_insert(tree, keybuf, klen, match_id);
-        } else {
-            if (doc_count >= doc_size) {
-                int newsize = doc_size ? doc_size * 2 : 8;
-                pin_node_id_t *nd = realloc(doc, newsize * sizeof(*nd));
-                if (nd == NULL)
-                    break;
-                doc = nd;
-                doc_size = newsize;
+            if (pin_stree_insert(tree, keybuf, klen, match_id) < 0) {
+                psu_log("pin_exec: for-each: can't sort more than %u items",
+                        key_seq);
+                break;
             }
-            doc[doc_count] = match_id;
-            doc_count += 1;
+            key_seq += 1;
         }
+
+        if (iterp->pei_kind == PEIK_NODESET)
+            pin_exec_nodeset_free(esp, iterp->pei_ns);
+
+        iterp->pei_kind = PEIK_SORTED;
+        iterp->pei_tree = tree;
+        iterp->pei_desc = primary_desc;
+        iterp->pei_entry = primary_desc ? pin_stree_last(tree)
+            : pin_stree_first(tree);
     }
 
-    if (ns_idx != UINT32_MAX)
-        pin_exec_nodeset_free(esp, ns_idx);
-
-    if (has_sort && tree) {
-        pin_stree_entry_t *e;
-        if (!primary_desc) {
-            for (e = pin_stree_last(tree); e; e = pin_stree_prev(tree, e))
-                pin_exec_push_seq_frame(esp, opp->po_alt, e->pse_node);
-        } else {
-            for (e = pin_stree_first(tree); e; e = pin_stree_next(tree, e))
-                pin_exec_push_seq_frame(esp, opp->po_alt, e->pse_node);
-        }
-        pin_stree_free(tree);
-    } else {
-        for (int i = doc_count - 1; i >= 0; i -= 1)
-            pin_exec_push_seq_frame(esp, opp->po_alt, doc[i]);
-        free(doc);
-    }
-
+    pin_exec_push_iter(esp, parsep, iterp);
     return pin_value_null();
 }
 
 /*
- * Apply templates to every retained child of the current context node,
- * resolving each child against the apply-templates (mode, name) Patricia
- * tree (see pin_rulebook_apply_find).  Unlike pin_op_for_each, there is no
- * tag-name filter: every PIN_TYPE_ELT child is a candidate, matched by its
- * own name, and (unlike for_each) each matched child gets ITS OWN rule's
- * op sequence as the frame's pc, not a single shared po_alt.
+ * Apply templates to every element child of the context node, in
+ * document order.  Each child runs its own rule's ops, found by
+ * pin_exec_apply_ops.
  *
- * Scope of this first cut: only rules that compiled to a plain op sequence
- * (pr_close_ops set) can run here, since the op engine executes against an
- * already-retained subtree and has no live parse event stream to feed a
- * BIA_ body.  A child whose matched template needs BIA_ (pr_body/
- * pr_new_state) logs a warning and is skipped, consistent with this
- * project's practice of a loud diagnostic over a silent drop.  A child
- * with no matching rule at all is silently discarded, matching the live
- * PBMODE_APPLY streaming dispatch's own no-match behavior (PIA_DISCARD).
- *
- * Not yet handled: select= on the apply-templates itself (only "every
- * element child, in document order" is supported), xsl:sort, and the
- * XSLT built-in template fallback (recursing into an unmatched element's
- * own children) -- an unmatched element's descendants are never visited.
+ * Not yet handled: select= on the apply-templates itself, xsl:sort,
+ * and the XSLT built-in template fallback (recursing into an unmatched
+ * element's own children), so an unmatched element's descendants are
+ * never visited.
  */
 static pin_value_t
 pin_op_apply (PIN_OP_FUNC_ARGS)
@@ -1244,64 +1360,16 @@ pin_op_apply (PIN_OP_FUNC_ARGS)
     if (parent == NULL)
         return pin_value_null();
 
-    pin_rulebook_t *rb = parsep->pp_rulebook;
-    pin_name_id_t mode_id = opp->po_name;
+    pin_exec_iter_t *iterp = calloc(1, sizeof(*iterp));
+    if (iterp == NULL)
+        return pin_value_null();
 
-    pin_node_id_t *doc = NULL;
-    int doc_count = 0, doc_size = 0;
+    iterp->pei_kind = PEIK_APPLY;
+    iterp->pei_name = opp->po_name;
+    iterp->pei_depth = parent->pn_depth;
+    iterp->pei_next = pin_node_child(parent);
 
-    pin_depth_t depth = parent->pn_depth;
-    for (pin_node_id_t cid = pin_node_child(parent);
-            !pin_node_id_is_null(cid); ) {
-        pin_node_t *child = pin_node_addr(pwp, cid);
-        if (child == NULL || child->pn_depth <= depth)
-            break;
-        if (child->pn_type == PIN_TYPE_ELT) {
-            if (doc_count >= doc_size) {
-                int newsize = doc_size ? doc_size * 2 : 8;
-                pin_node_id_t *nd = realloc(doc, newsize * sizeof(*nd));
-                if (nd == NULL)
-                    break;
-                doc = nd;
-                doc_size = newsize;
-            }
-            doc[doc_count++] = cid;
-        }
-        cid = child->pn_next;
-    }
-
-    for (int i = doc_count - 1; i >= 0; i -= 1) {
-        pin_node_t *child = pin_node_addr(pwp, doc[i]);
-        if (child == NULL)
-            continue;
-
-        pin_rule_t *rule = pin_rulebook_apply_find(rb, mode_id, child->pn_name);
-        if (rule == NULL)
-            continue;	/* No match: discard, like the live PBMODE_APPLY path */
-
-        /*
-         * pr_close_ops alone is not sufficient: a rule that fell back to
-         * BIA_ (pr_body) or a for-each state (pr_new_state) can still have
-         * a stale non-null pr_close_ops left over from an abandoned op-
-         * compile attempt (pin_compile_template never clears it on that
-         * path).  Mirror the live dispatcher's three-way check
-         * (pin_parse.c's pin_parse_handle_rule) rather than trusting
-         * pr_close_ops by itself.
-         */
-        if (!pin_op_id_is_null(rule->pr_close_ops)
-                && pin_body_instr_id_is_null(rule->pr_body)
-                && pin_rstate_id_is_null(rule->pr_new_state)) {
-            pin_exec_push_seq_frame(esp, rule->pr_close_ops, doc[i]);
-        } else {
-            psu_log("pin_exec: apply-templates: matched template for \"%s\" "
-                     "needs apply-templates/copy-of/for-each, which the "
-                     "retained-subtree op engine does not support yet; "
-                     "skipping",
-                     pin_namepool_string(pwp, child->pn_name));
-        }
-    }
-
-    free(doc);
+    pin_exec_push_iter(esp, parsep, iterp);
     return pin_value_null();
 }
 
@@ -1376,6 +1444,34 @@ pin_exec_emit_node (pin_parse_t *parsep, pin_workspace_t *pwp,
         const char *text = pin_textpool_string(pwp, nodep->pn_contents);
         if (text)
             pin_insert_text(parsep, text, strlen(text), nodep->pn_type);
+    } else if (nodep->pn_type == PIN_TYPE_ROOT) {
+        /*
+         * A fragment emits its children.  Stop at the child that was
+         * last when we started, since a fragment can be appended to
+         * itself.
+         */
+        pin_depth_t root_depth = nodep->pn_depth;
+        pin_node_id_t last = pin_node_id_null_atom();
+        for (pin_node_id_t cid = pin_node_child(nodep);
+                !pin_node_id_is_null(cid); ) {
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= root_depth)
+                break;
+            last = cid;
+            cid = child->pn_next;
+        }
+
+        for (pin_node_id_t cid = pin_node_child(nodep);
+                !pin_node_id_is_null(last) && !pin_node_id_is_null(cid); ) {
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= root_depth)
+                break;
+            pin_node_id_t next = child->pn_next;
+            pin_exec_emit_node(parsep, pwp, cid);
+            if (pin_node_id_equal(cid, last))
+                break;
+            cid = next;
+        }
     }
 }
 
@@ -1563,8 +1659,10 @@ pin_op_call (PIN_OP_FUNC_ARGS)
     esp->pes_seq[top].psf_is_call = 1;
     esp->pes_seq[top].psf_saved_var_count = esp->pes_var_count;
     esp->pes_seq[top].psf_saved_nodeset_count = esp->pes_nodeset_count;
+    esp->pes_seq[top].psf_saved_frag_count = esp->pes_frag_count;
     esp->pes_seq[top].psf_param_base = param_base;
     esp->pes_seq[top].psf_param_count = nparams;
+    esp->pes_seq[top].psf_iter = NULL;
     esp->pes_seq_top += 1;
     return pin_value_null();
 }
@@ -1671,6 +1769,253 @@ pin_op_ns_pop (PIN_OP_FUNC_ARGS)
 }
 
 /*
+ * Fragments: content built for a value.  Each is recorded so it can
+ * be freed when the scope that made it ends.
+ */
+static void
+pin_exec_frag_add (pin_exec_state_t *esp, pin_node_id_t root)
+{
+    if (esp->pes_frag_count >= esp->pes_frag_size) {
+        uint32_t newsize = esp->pes_frag_size ? esp->pes_frag_size * 2 : 8;
+        pin_node_id_t *np = realloc(esp->pes_frags, newsize * sizeof(*np));
+        if (np == NULL)
+            return;
+
+        esp->pes_frags = np;
+        esp->pes_frag_size = newsize;
+    }
+
+    esp->pes_frags[esp->pes_frag_count] = root;
+    esp->pes_frag_count += 1;
+}
+
+static void
+pin_exec_frags_free (pin_exec_state_t *esp, pin_parse_t *parsep,
+                     uint32_t watermark)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+
+    while (esp->pes_frag_count > watermark) {
+        esp->pes_frag_count -= 1;
+        pin_output_store_free_root(pwp, esp->pes_frags[esp->pes_frag_count]);
+    }
+}
+
+/*
+ * The fragment a value is, or the null atom: a node set holding just
+ * one fragment root.
+ */
+static pin_node_id_t
+pin_exec_value_frag (pin_exec_state_t *esp, pin_value_t v)
+{
+    if (v.pv_type != PVT_NODESET || v.pv_atom >= esp->pes_nodeset_count)
+        return pin_node_id_null_atom();
+
+    pin_ns_entry_t *nsp = &esp->pes_nodesets[v.pv_atom];
+    if (nsp->pne_count != 1)
+        return pin_node_id_null_atom();
+
+    pin_node_id_t nid = pin_node_id(nsp->pne_nodes[0]);
+    for (uint32_t i = 0; i < esp->pes_frag_count; i++) {
+        if (pin_node_id_equal(esp->pes_frags[i], nid))
+            return nid;
+    }
+
+    return pin_node_id_null_atom();
+}
+
+/* A node set holding just "root" */
+static pin_value_t
+pin_exec_frag_value (pin_exec_state_t *esp, pin_node_id_t root)
+{
+    uint32_t idx = pin_exec_nodeset_alloc(esp);
+    if (idx == UINT32_MAX)
+        return pin_value_null();
+
+    pin_exec_nodeset_append(esp, idx,
+            pa_fixed_atom_of(pin_node_id_atom_of(root)));
+
+    return pin_value_nodeset(idx);
+}
+
+/*
+ * The string value of a scalar (a string or boolean), or NULL for
+ * anything else.
+ */
+static const char *
+pin_exec_scalar_string (pin_workspace_t *pwp, pin_value_t v)
+{
+    if (v.pv_type == PVT_STRING)
+        return pin_namepool_string(pwp, pin_name_id(v.pv_atom)) ?: "";
+
+    if (v.pv_type == PVT_BOOLEAN)
+        return (v.pv_flags & PVF_TRUE) ? "true" : "false";
+
+    return NULL;
+}
+
+/*
+ * Send a value to the output as an mvar append does: a node set is
+ * copied, and a non-empty scalar becomes a <text> element holding its
+ * string value.
+ */
+static void
+pin_exec_emit_value (pin_exec_state_t *esp, pin_parse_t *parsep,
+                     pin_value_t v)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+
+    switch (v.pv_type) {
+    case PVT_NODESET:
+        if (v.pv_atom < esp->pes_nodeset_count) {
+            pin_ns_entry_t *nsp = &esp->pes_nodesets[v.pv_atom];
+            for (uint32_t i = 0; i < nsp->pne_count; i++)
+                pin_exec_emit_node(parsep, pwp, pin_node_id(nsp->pne_nodes[i]));
+        }
+        return;
+
+    case PVT_NODE:
+        pin_exec_emit_node(parsep, pwp, pin_node_id(v.pv_atom));
+        return;
+
+    default:
+        break;
+    }
+
+    const char *str = pin_exec_scalar_string(pwp, v);
+    if (str == NULL || *str == '\0')
+        return;
+
+    pin_name_id_t tag = pin_namepool_atom(pwp, "text", TRUE);
+    pin_insert_open(parsep, tag, NULL, "text", NULL, PIA_NONE);
+    pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
+    pin_insert_close(parsep, NULL, "text");
+}
+
+/*
+ * Send the output that follows to a new fragment, until BUILD_CLOSE.
+ */
+static pin_value_t
+pin_op_build_open (PIN_OP_FUNC_ARGS)
+{
+    pin_node_id_t root = pin_parse_build_push(parsep, pin_node_id_null_atom());
+    if (!pin_node_id_is_null(root))
+        pin_exec_frag_add(esp, root);
+
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_build_close (PIN_OP_FUNC_ARGS)
+{
+    pin_node_id_t root = pin_parse_build_pop(parsep);
+
+    if (pin_node_id_is_null(root))
+        pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(
+                pin_namepool_atom(pin_parse_workspace(parsep), "", TRUE))));
+    else
+        pin_exec_push(esp, pin_exec_frag_value(esp, root));
+
+    return pin_value_null();
+}
+
+/*
+ * Send the output that follows to the end of the variable named by
+ * name_atom, until pin_parse_build_pop.  A variable that isn't a
+ * fragment becomes one, holding a copy of its old value if that's a
+ * node set; libslax drops a scalar.  Other variables that hold the
+ * same fragment see what's appended, as with libslax.  Returns the
+ * null atom on failure.
+ */
+static pin_node_id_t
+pin_exec_append_begin (pin_exec_state_t *esp, pin_parse_t *parsep,
+                       uint32_t name_atom)
+{
+    pin_var_binding_t *vp = pin_exec_var_find(esp, name_atom);
+    pin_value_t old = vp ? vp->pvb_value : pin_value_null();
+
+    pin_node_id_t root = pin_exec_value_frag(esp, old);
+    if (!pin_node_id_is_null(root))
+        return pin_parse_build_push(parsep, root);
+
+    root = pin_parse_build_push(parsep, pin_node_id_null_atom());
+    if (pin_node_id_is_null(root))
+        return root;
+
+    pin_exec_frag_add(esp, root);
+    if (old.pv_type == PVT_NODESET || old.pv_type == PVT_NODE)
+        pin_exec_emit_value(esp, parsep, old);
+
+    vp = pin_exec_var_alloc(esp, name_atom);
+    if (vp)
+        vp->pvb_value = pin_exec_frag_value(esp, root);
+
+    return root;
+}
+
+/* Append the content built until APPEND_CLOSE to variable po_name */
+static pin_value_t
+pin_op_append_open (PIN_OP_FUNC_ARGS)
+{
+    pin_exec_append_begin(esp, parsep, pin_name_id_atom_of(opp->po_name));
+    return pin_value_null();
+}
+
+/*
+ * Append the value on the stack to variable po_name.  As in libslax,
+ * a scalar appended to a scalar makes their concatenation; otherwise
+ * the variable becomes a fragment and the value is added to it.
+ */
+static pin_value_t
+pin_op_append_value (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    uint32_t name_atom = pin_name_id_atom_of(opp->po_name);
+    pin_value_t v = pin_exec_pop(esp);
+
+    if (v.pv_type == PVT_NULL)
+        return pin_value_null();
+
+    const char *str = pin_exec_scalar_string(pwp, v);
+    if (str) {
+        pin_var_binding_t *vp = pin_exec_var_find(esp, name_atom);
+        pin_value_t old = vp ? vp->pvb_value : pin_value_null();
+        const char *ostr = (old.pv_type == PVT_NULL)
+            ? "" : pin_exec_scalar_string(pwp, old);
+
+        if (ostr) {
+            size_t olen = strlen(ostr);
+            size_t len = olen + strlen(str) + 1;
+            char *buf = alloca(len);
+
+            memcpy(buf, ostr, olen);
+            strlcpy(buf + olen, str, len - olen);
+
+            vp = pin_exec_var_alloc(esp, name_atom);
+            if (vp) {
+                pin_name_id_t id = pin_namepool_atom(pwp, buf, TRUE);
+                vp->pvb_value = pin_value_string(pin_name_id_atom_of(id));
+            }
+            return pin_value_null();
+        }
+    }
+
+    if (pin_node_id_is_null(pin_exec_append_begin(esp, parsep, name_atom)))
+        return pin_value_null();
+
+    pin_exec_emit_value(esp, parsep, v);
+    pin_parse_build_pop(parsep);
+    return pin_value_null();
+}
+
+static pin_value_t
+pin_op_append_close (PIN_OP_FUNC_ARGS)
+{
+    pin_parse_build_pop(parsep);
+    return pin_value_null();
+}
+
+/*
  * Op dispatch table
  */
 
@@ -1718,6 +2063,11 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_EVAL]          = { "eval",          pin_op_eval,          0 },
     [PIN_OP_NS_PUSH]       = { "ns-push",       pin_op_ns_push,       0 },
     [PIN_OP_NS_POP]        = { "ns-pop",        pin_op_ns_pop,        0 },
+    [PIN_OP_BUILD_OPEN]    = { "build-open",    pin_op_build_open,    0 },
+    [PIN_OP_BUILD_CLOSE]   = { "build-close",   pin_op_build_close,   0 },
+    [PIN_OP_APPEND_OPEN]   = { "append-open",   pin_op_append_open,   0 },
+    [PIN_OP_APPEND_VALUE]  = { "append-value",  pin_op_append_value,  0 },
+    [PIN_OP_APPEND_CLOSE]  = { "append-close",  pin_op_append_close,  0 },
 };
 
 /*
@@ -1766,7 +2116,8 @@ pin_exec_seq_grow (pin_exec_state_t *esp)
 static int
 pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 		     pin_op_id_t start, pin_node_id_t context_node,
-		     uint8_t is_call, uint32_t param_base, uint32_t param_count)
+		     uint8_t is_call, uint32_t param_base, uint32_t param_count,
+		     pin_boolean_t keep)
 {
     pin_rulebook_t *prbp = parsep->pp_rulebook;
 
@@ -1777,6 +2128,7 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
      */
     uint32_t saved_var_count = esp->pes_var_count;
     uint32_t saved_nodeset_count  = esp->pes_nodeset_count;
+    uint32_t saved_frag_count = esp->pes_frag_count;
 
     if (pin_exec_seq_grow(esp) < 0)
         return -1;
@@ -1787,8 +2139,10 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     esp->pes_seq[top].psf_is_call = is_call;
     esp->pes_seq[top].psf_saved_var_count = 0;
     esp->pes_seq[top].psf_saved_nodeset_count = 0;
+    esp->pes_seq[top].psf_saved_frag_count = saved_frag_count;
     esp->pes_seq[top].psf_param_base = param_base;
     esp->pes_seq[top].psf_param_count = param_count;
+    esp->pes_seq[top].psf_iter = NULL;
     esp->pes_seq_top += 1;
 
     while (esp->pes_seq_top > 0) {
@@ -1796,6 +2150,18 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 
         pin_op_id_t pc = esp->pes_seq[top].psf_pc;
         if (pin_op_id_is_null(pc)) {
+            pin_exec_iter_t *iterp = esp->pes_seq[top].psf_iter;
+            if (iterp) {
+                pin_node_id_t item = pin_exec_iter_next(esp, parsep, iterp,
+                                                        &pc);
+                if (!pin_node_id_is_null(item)) {
+                    esp->pes_seq[top].psf_pc = pc;
+                    esp->pes_seq[top].psf_context = item;
+                    continue;
+                }
+                pin_exec_iter_free(esp, iterp);
+            }
+
             if (esp->pes_seq[top].psf_is_call) {
                 uint32_t svc = esp->pes_seq[top].psf_saved_var_count;
                 uint32_t snc = esp->pes_seq[top].psf_saved_nodeset_count;
@@ -1803,6 +2169,8 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
                     pin_exec_nodeset_free(esp, i);
                 esp->pes_var_count = svc;
                 esp->pes_nodeset_count = snc;
+                pin_exec_frags_free(esp, parsep,
+                        esp->pes_seq[top].psf_saved_frag_count);
                 esp->pes_pending_count = esp->pes_seq[top].psf_param_base;
             }
             esp->pes_seq_top -= 1;
@@ -1825,12 +2193,16 @@ pin_exec_run_frame (pin_exec_state_t *esp, struct pin_parse_s *parsep,
             pin_op_table[type].pod_func(esp, parsep, opp);
     }
 
+    if (keep)
+        return 0;
+
     /* Free nodesets allocated during this invocation */
     for (uint32_t i = saved_nodeset_count; i < esp->pes_nodeset_count; i++) {
         pin_exec_nodeset_free(esp, i);
     }
     esp->pes_var_count = saved_var_count;
     esp->pes_nodeset_count = saved_nodeset_count;
+    pin_exec_frags_free(esp, parsep, saved_frag_count);
 
     return 0;
 }
@@ -1839,7 +2211,16 @@ int
 pin_exec_run (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 	      pin_op_id_t start, pin_node_id_t context_node)
 {
-    return pin_exec_run_frame(esp, parsep, start, context_node, 0, 0, 0);
+    return pin_exec_run_frame(esp, parsep, start, context_node,
+                              0, 0, 0, FALSE);
+}
+
+int
+pin_exec_run_globals (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                      pin_op_id_t start)
+{
+    return pin_exec_run_frame(esp, parsep, start, pin_node_id_null_atom(),
+                              0, 0, 0, TRUE);
 }
 
 /*
@@ -1859,7 +2240,7 @@ pin_exec_run_call (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 	? esp->pes_pending_count - nparams : 0;
 
     return pin_exec_run_frame(esp, parsep, start, context_node,
-			      1, param_base, nparams);
+			      1, param_base, nparams, FALSE);
 }
 
 /*

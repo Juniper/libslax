@@ -111,7 +111,12 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_EVAL          (PIN_OP_MAX_COMPLEX + 33) /* Run compiled xo_eval_prog_t po_name indexes; push PVT_BOOLEAN or PVT_STRING */
 #define PIN_OP_NS_PUSH       (PIN_OP_MAX_COMPLEX + 34) /* Push prefix/uri binding (po_name=prefix atom, po_name2=uri atom) */
 #define PIN_OP_NS_POP        (PIN_OP_MAX_COMPLEX + 35) /* Pop po_count bindings pushed by preceding NS_PUSH ops */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 36) /* Sentinel: number of defined op codes */
+#define PIN_OP_BUILD_OPEN    (PIN_OP_MAX_COMPLEX + 36) /* Send output to a new fragment */
+#define PIN_OP_BUILD_CLOSE   (PIN_OP_MAX_COMPLEX + 37) /* End the fragment; push it as a node set */
+#define PIN_OP_APPEND_OPEN   (PIN_OP_MAX_COMPLEX + 38) /* Send output to the end of variable po_name's fragment */
+#define PIN_OP_APPEND_VALUE  (PIN_OP_MAX_COMPLEX + 39) /* Pop a value and send it to the output, as an mvar append does */
+#define PIN_OP_APPEND_CLOSE  (PIN_OP_MAX_COMPLEX + 40) /* End the append */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 41) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -172,6 +177,30 @@ typedef struct pin_exec_rb_frame_s {
 } pin_exec_rb_frame_t;
 
 /*
+ * The state of one for-each or apply-templates loop.  A single frame
+ * runs the whole loop: when its body finishes, the frame takes the
+ * next item from here, so the number of items doesn't matter.
+ */
+typedef struct pin_exec_iter_s {
+    uint8_t pei_kind;		/* Where the items come from (PEIK_*) */
+    pin_boolean_t pei_desc;	/* PEIK_SORTED: walk the tree backwards */
+    pin_op_id_t pei_body;	/* Body ops (for-each) */
+    pin_name_id_t pei_name;	/* Child name (PEIK_CHILD) or mode (PEIK_APPLY) */
+    pin_depth_t pei_depth;	/* Parent's depth; ends the child walk */
+    pin_node_id_t pei_next;	/* Next child to look at */
+    uint32_t pei_ns;		/* PEIK_NODESET: nodeset holding the items */
+    uint32_t pei_pos;		/* PEIK_NODESET: next index in pei_ns */
+    struct pin_stree_s *pei_tree; /* PEIK_SORTED: the items, by key */
+    struct pin_stree_entry_s *pei_entry; /* PEIK_SORTED: next entry */
+} pin_exec_iter_t;
+
+/* Values for pei_kind */
+#define PEIK_CHILD	1	/* Children of the context with a given name */
+#define PEIK_NODESET	2	/* Nodes collected for a multi-step path */
+#define PEIK_SORTED	3	/* Nodes sorted by key */
+#define PEIK_APPLY	4	/* Element children with a rule in the mode */
+
+/*
  * One frame on the op-sequence stack.
  * psf_context is the retained tree node for the matched element
  * (the node against which PUSH_ATTR, PUSH_TEXT, PUSH_NODES operate).
@@ -181,9 +210,11 @@ typedef struct pin_exec_seq_frame_s {
     pin_node_id_t psf_context;   /* Retained matched element node */
     uint32_t      psf_saved_var_count;     /* CALL frame: caller's var watermark */
     uint32_t      psf_saved_nodeset_count; /* CALL frame: caller's nodeset watermark */
+    uint32_t      psf_saved_frag_count;    /* CALL frame: caller's fragment watermark */
     uint32_t      psf_param_base;          /* CALL frame: index of first pending param */
     uint32_t      psf_param_count;         /* CALL frame: number of pending params */
     uint8_t       psf_is_call;             /* 1 = CALL frame; restore scope on pop */
+    pin_exec_iter_t *psf_iter;	/* Loop frame: where the next item comes from */
 } pin_exec_seq_frame_t;
 
 typedef struct pin_exec_state_s {
@@ -212,6 +243,15 @@ typedef struct pin_exec_state_s {
     uint32_t           pes_var_count;
     uint32_t           pes_var_size;
 
+    /*
+     * Fragments built for values, freed when the scope that made
+     * them ends.  A rebinding doesn't free the old one, since another
+     * variable may still hold it.
+     */
+    pin_node_id_t *pes_frags;
+    uint32_t       pes_frag_count;
+    uint32_t       pes_frag_size;
+
     /* Pending params staged by WITH_PARAM before a CALL */
     pin_pending_param_t *pes_pending;
     uint32_t             pes_pending_count;
@@ -239,6 +279,14 @@ int
 pin_exec_run_call (pin_exec_state_t *esp, struct pin_parse_s *parsep,
 		   pin_op_id_t start, pin_node_id_t context_node,
 		   uint32_t nparams);
+
+/*
+ * Run the ops that bind global variables.  Unlike pin_exec_run, the
+ * bindings and the fragments they hold are kept, for the whole run.
+ */
+int
+pin_exec_run_globals (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+		      pin_op_id_t start);
 
 /* Stage one {name, value} pending param; shared by PIN_OP_WITH_PARAM and
  * BIA_WITH_PARAM.  Returns 0 on success, -1 on OOM.                      */

@@ -40,6 +40,7 @@ libpininc_HEADERS = \
     pin_filter.h \
     pin_nodeset.h \
     pin_output.h \
+    pin_output_store.h \
     pin_parse.h \
     pin_rules.h \
     pin_compile.h \
@@ -61,7 +62,8 @@ libpin_la_SOURCES = \
     pin_parse.c \
     pin_rules.c \
     pin_output.c \
-    pin_output_xml.c
+    pin_output_xml.c \
+    pin_output_store.c
 
 libpin_la_LIBADD = \
     $(top_builddir)/libpsu/libpsu.la \

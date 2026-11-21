@@ -46,6 +46,7 @@ typedef struct pin_parse_s {
 				 * pin_parse_current_filter() in pin_parse.c */
     pin_context_t pp_context;	/* Execution context (mode, etc.) */
     int pp_root_rule_fired;	/* Non-zero after match="/" rule has fired */
+    int pp_globals_built;	/* Non-zero after prb_global_ops has run */
     pin_exec_state_t pp_exec;	/* Op-dispatch execution state */
     int pp_capture;            /* 1=message, 2=comment, 3=PI: text capture active */
     unsigned pp_cap_name;      /* PI target name atom */
@@ -60,6 +61,7 @@ typedef struct pin_parse_s {
     uint32_t pp_strip_size;     /* allocated capacity */
     struct pin_output_s *pp_result; /* Fan-out of the attached sinks */
     struct pin_output_stack_s *pp_dests; /* Output destinations; top is current */
+    struct pin_output_stack_s *pp_builds; /* Fragments being built; top is current */
     int pp_output_state;	/* PIN_OUTPUT_STATE_* */
 } pin_parse_t;
 
@@ -156,6 +158,20 @@ pin_parse_add_output (pin_parse_t *parsep,
  */
 int
 pin_parse_add_output_xml (pin_parse_t *parsep, FILE *out);
+
+/*
+ * Build a fragment: until the matching pin_parse_build_pop(), all
+ * output goes to it instead of to the current destination.  "root"
+ * is a fragment to append to, or the null atom for a new one.
+ * Returns the fragment's root, or the null atom on failure (and then
+ * there is nothing to pop).
+ */
+pin_node_id_t
+pin_parse_build_push (pin_parse_t *parsep, pin_node_id_t root);
+
+/* End the innermost build; returns its fragment's root */
+pin_node_id_t
+pin_parse_build_pop (pin_parse_t *parsep);
 
 void
 pin_parse_set_rulebook (pin_parse_t *parsep, pin_rulebook_t *rulebook);

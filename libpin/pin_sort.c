@@ -29,8 +29,12 @@
 #include <libpin/pin_node.h>
 #include <libpin/pin_sort.h>
 
-#define PST_SHIFT    4      /* 16 entries per page in the fixed pool */
-#define PST_MAX_ATOMS 1024  /* upper bound on sort entries per tree */
+/*
+ * A sort can hold as many entries as a document has nodes.  Pages are
+ * allocated as they fill, so a small sort costs one page.
+ */
+#define PST_SHIFT	12	/* 4096 entries per page in the fixed pool */
+#define PST_MAX_ATOMS	(1<<26)	/* Upper bound on sort entries per tree */
 
 /*
  * Key function: resolve a pa_pat_data_atom_t to the key bytes stored

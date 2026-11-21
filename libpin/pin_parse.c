@@ -50,6 +50,7 @@
 #include <libpin/pin_exec.h>
 #include <libpin/pin_sort.h>
 #include <libpin/pin_output.h>
+#include <libpin/pin_output_store.h>
 
 /* Forward declarations */
 static void pin_body_exec_advance(pin_parse_t *parsep);
@@ -303,10 +304,23 @@ pin_parse_open (pa_mmap_t *pmp, pin_workspace_t *workp, const char *name,
     return NULL;
 }
 
+static inline pin_boolean_t
+pin_parse_building (pin_parse_t *parsep)
+{
+    return (parsep->pp_builds && parsep->pp_builds->pos_depth > 0);
+}
+
 void
 pin_parse_destroy (pin_parse_t *parsep)
 {
     pin_parse_output_finish(parsep);
+    if (parsep->pp_builds) {
+	while (parsep->pp_builds->pos_depth > 0)
+	    pin_parse_build_pop(parsep);
+	pin_output_stack_cleanup(parsep->pp_builds);
+	free(parsep->pp_builds);
+	parsep->pp_builds = NULL;
+    }
     if (parsep->pp_dests) {
 	pin_output_stack_cleanup(parsep->pp_dests);
 	free(parsep->pp_dests);
@@ -1101,7 +1115,8 @@ pin_insert_open_flags (pin_parse_t *parsep, pin_name_id_t name_id,
      * element only covers the output below it.
      */
     pin_istack_t *dfp = output ? top : sfp;
-    if (dfp->ps_action == PIA_DISCARD) {
+    if (dfp->ps_action == PIA_DISCARD
+	    && !(output && pin_parse_building(parsep))) {
 	if (output)
 	    pin_insert_push_output(pip, name_id, PIA_DISCARD, 0);
 	else
@@ -1390,41 +1405,8 @@ pin_insert_retained (pin_parse_t *parsep, pin_istack_t *psp)
 static void
 pin_insert_free_subtree (pin_insert_t *pip, pin_node_id_t top_atom)
 {
-    pin_workspace_t *pwp = pip->pin_tree->pt_workspace;
-    pin_node_id_t cur = top_atom;
-
-    for (;;) {
-	pin_node_t *nodep = pin_node_addr(pwp, cur);
-	if (nodep == NULL)
-	    return;
-
-	pin_node_id_t child = pin_node_child(nodep);
-	if (!pin_node_id_is_null(child)) {
-	    cur = child;
-	    continue;
-	}
-
-	pin_node_id_t next = nodep->pn_next;
-	pin_node_id_t parent = nodep->pn_parent;
-
-	pa_arb_free_atom(pwp->pw_textpool, pin_node_text(nodep));
-	pin_insert_node_free(pip, cur);
-
-	if (pin_node_id_equal(cur, top_atom))
-	    return;
-
-	if (pin_node_id_equal(next, parent)) {
-	    /* That was the last child, so the parent is now a leaf */
-	    pin_node_t *parentp = pin_node_addr(pwp, parent);
-	    if (parentp == NULL)
-		return;
-
-	    pin_node_set_child(parentp, pin_node_id_null_atom());
-	    cur = parent;
-	} else {
-	    cur = next;
-	}
-    }
+    pip->pin_live -= pin_tree_free_subtree(pip->pin_tree->pt_workspace,
+					   top_atom);
 }
 
 /*
@@ -3167,6 +3149,13 @@ pin_parse (pin_parse_t *parsep)
 	pin_output_start(pin_output_stack_top(parsep->pp_dests));
     }
 
+    pin_rulebook_t *prbp = parsep->pp_rulebook;
+    if (prbp && !parsep->pp_globals_built
+	    && !pin_op_id_is_null(prbp->prb_global_ops)) {
+	parsep->pp_globals_built = 1;
+	pin_exec_run_globals(&parsep->pp_exec, parsep, prbp->prb_global_ops);
+    }
+
     for (;;) {
 
 	type = pin_source_next_token(srcp, &data, &rest);
@@ -4262,14 +4251,74 @@ pin_parse_output_finish (pin_parse_t *parsep)
     pin_output_finish(pin_output_stack_top(parsep->pp_dests));
 }
 
+pin_node_id_t
+pin_parse_build_push (pin_parse_t *parsep, pin_node_id_t root)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+
+    if (parsep->pp_builds == NULL) {
+	parsep->pp_builds = calloc(1, sizeof(*parsep->pp_builds));
+	if (parsep->pp_builds == NULL)
+	    return pin_node_id_null_atom();
+	pin_output_stack_init(parsep->pp_builds);
+    }
+
+    pin_boolean_t made = FALSE;
+    if (pin_node_id_is_null(root)) {
+	root = pin_output_store_root(pwp);
+	if (pin_node_id_is_null(root))
+	    return root;
+	made = TRUE;
+    }
+
+    pin_output_t sink;
+    if (pin_output_store_init(&sink, pwp, root) < 0) {
+	if (made)
+	    pin_output_store_free_root(pwp, root);
+	return pin_node_id_null_atom();
+    }
+
+    pin_output_writer_t *wrp = pin_output_stack_push(parsep->pp_builds, &sink);
+    if (wrp == NULL) {
+	pin_output_free(&sink);
+	if (made)
+	    pin_output_store_free_root(pwp, root);
+	return pin_node_id_null_atom();
+    }
+
+    pin_output_start(wrp);
+    return root;
+}
+
+pin_node_id_t
+pin_parse_build_pop (pin_parse_t *parsep)
+{
+    if (!pin_parse_building(parsep))
+	return pin_node_id_null_atom();
+
+    pin_output_writer_t *wrp = pin_output_stack_top(parsep->pp_builds);
+    pin_output_t sink = wrp->pw_sink;
+    pin_node_id_t root = pin_output_store_root_of(&sink);
+
+    pin_output_finish(wrp);
+    pin_output_stack_pop(parsep->pp_builds);
+    pin_output_free(&sink);
+
+    return root;
+}
+
 /*
  * The writer that content in frame "psp" goes to, or NULL if it
  * doesn't go to the output (no sink attached, or the frame is
- * retained input or discarded).
+ * retained input or discarded).  While a fragment is being built,
+ * everything goes to it.
  */
 static pin_output_writer_t *
 pin_parse_emit_writer (pin_parse_t *parsep, pin_istack_t *psp)
 {
+    if (pin_parse_building(parsep))
+	return pin_output_stack_top(parsep->pp_builds);
+
     if (parsep->pp_dests == NULL || !(psp->ps_emit & PSE_CONTENT))
 	return NULL;
 
@@ -4372,7 +4421,9 @@ pin_insert_emit_attrib (pin_parse_t *parsep, const char *name,
 static void
 pin_insert_emit_close (pin_parse_t *parsep)
 {
-    if (parsep->pp_dests)
+    if (pin_parse_building(parsep))
+	pin_output_close(pin_output_stack_top(parsep->pp_builds));
+    else if (parsep->pp_dests)
 	pin_output_close(pin_output_stack_top(parsep->pp_dests));
 }
 

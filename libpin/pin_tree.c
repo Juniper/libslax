@@ -100,3 +100,54 @@ pin_tree_append_child (pin_workspace_t *pwp,
 
     return new_node_atom;
 }
+
+/*
+ * Free the subtree at top_atom, with the text its nodes hold, in one
+ * pass that needs no stack: free a leaf, and when it was its parent's
+ * last child, the parent becomes a leaf.  The caller has already
+ * unlinked top_atom from its parent, if it has one.  Returns the
+ * number of nodes freed.
+ */
+uint32_t
+pin_tree_free_subtree (pin_workspace_t *pwp, pin_node_id_t top_atom)
+{
+    pin_node_id_t cur = top_atom;
+    uint32_t count = 0;
+
+    for (;;) {
+	pin_node_t *nodep = pin_node_addr(pwp, cur);
+	if (nodep == NULL)
+	    return count;
+
+	pin_node_id_t child = pin_node_child(nodep);
+	if (!pin_node_id_is_null(child)) {
+	    cur = child;
+	    continue;
+	}
+
+	pin_node_id_t next = nodep->pn_next;
+	pin_node_id_t parent = nodep->pn_parent;
+
+	if (nodep->pn_type == PIN_TYPE_COMMENT || nodep->pn_type == PIN_TYPE_PI)
+	    pa_arb_free_atom(pwp->pw_textpool, pa_arb_atom(nodep->pn_contents));
+	else
+	    pa_arb_free_atom(pwp->pw_textpool, pin_node_text(nodep));
+	pin_node_free(pwp, cur);
+	count += 1;
+
+	if (pin_node_id_equal(cur, top_atom))
+	    return count;
+
+	if (pin_node_id_equal(next, parent)) {
+	    /* That was the last child, so the parent is now a leaf */
+	    pin_node_t *parentp = pin_node_addr(pwp, parent);
+	    if (parentp == NULL)
+		return count;
+
+	    pin_node_set_child(parentp, pin_node_id_null_atom());
+	    cur = parent;
+	} else {
+	    cur = next;
+	}
+    }
+}

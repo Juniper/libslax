@@ -62,6 +62,7 @@
 
 /* Standard XSLT namespace URI */
 #define PIN_XSL_URI "http://www.w3.org/1999/XSL/Transform"
+#define PIN_SLAX_URI "http://xml.libslax.org/slax"
 
 /*
  * Return non-zero if nodep is an element in the XSLT namespace,
@@ -78,6 +79,34 @@ pin_is_xsl (xmlNodePtr nodep, const char *name)
 	&& (name == NULL
 	    || strcmp((const char *) nodep->name, name) == 0)
 	&& strcmp((const char *) nodep->ns->href, PIN_XSL_URI) == 0;
+}
+
+/*
+ * Return non-zero if nodep is the element "name" in the SLAX
+ * namespace, which is how SLAX statements with no XSLT equivalent
+ * (mvar append and set) reach us.
+ */
+static int
+pin_is_slax (xmlNodePtr nodep, const char *name)
+{
+    if (nodep == NULL || nodep->type != XML_ELEMENT_NODE)
+	return 0;
+
+    return nodep->ns && nodep->ns->href
+	&& strcmp((const char *) nodep->name, name) == 0
+	&& strcmp((const char *) nodep->ns->href, PIN_SLAX_URI) == 0;
+}
+
+/* Return non-zero if nodep has an element child */
+static int
+pin_has_element_child (xmlNodePtr nodep)
+{
+    for (xmlNodePtr cp = nodep->children; cp; cp = cp->next) {
+	if (cp->type == XML_ELEMENT_NODE)
+	    return 1;
+    }
+
+    return 0;
 }
 
 
@@ -1898,6 +1927,67 @@ pin_is_numeric_literal (const char *s)
     return 1;
 }
 
+/*
+ * True if "s" is one call to an XPath function whose value is always
+ * a string, number or boolean, so copy-of of it is the same as
+ * value-of.  SLAX makes these for a ternary ("a ? concat(b, c) : d").
+ */
+static int
+pin_select_is_scalar_call (const char *s)
+{
+    static const char *const names[] = {
+	"boolean", "ceiling", "concat", "contains", "count", "false",
+	"floor", "local-name", "name", "namespace-uri", "normalize-space",
+	"not", "number", "round", "starts-with", "string",
+	"string-length", "substring", "substring-after",
+	"substring-before", "sum", "translate", "true", NULL
+    };
+
+    while (*s == ' ')
+	s += 1;
+
+    const char *paren = strchr(s, '(');
+    if (paren == NULL)
+	return 0;
+
+    size_t nlen = paren - s;
+    int found = 0;
+    for (int i = 0; names[i]; i++) {
+	if (strlen(names[i]) == nlen && strncmp(s, names[i], nlen) == 0) {
+	    found = 1;
+	    break;
+	}
+    }
+    if (!found)
+	return 0;
+
+    /* The call's close paren must end the expression */
+    int depth = 0;
+    char quote = '\0';
+    const char *cp;
+    for (cp = paren; *cp; cp++) {
+	if (quote) {
+	    if (*cp == quote)
+		quote = '\0';
+	} else if (*cp == '\'' || *cp == '"') {
+	    quote = *cp;
+	} else if (*cp == '(') {
+	    depth += 1;
+	} else if (*cp == ')') {
+	    depth -= 1;
+	    if (depth == 0)
+		break;
+	}
+    }
+    if (*cp != ')')
+	return 0;
+
+    for (cp += 1; *cp == ' '; cp++)
+	continue;
+
+    return (*cp == '\0');
+}
+
 static pin_sel_kind_t
 pin_classify_select (const char *s)
 {
@@ -2179,6 +2269,213 @@ pin_op_push_for_test (pin_op_cursor_t *cur, const char *test)
 }
 
 /*
+ * Emit the op that pushes the value of a select expression.  This is
+ * the test form, plus string literals.
+ */
+static pin_op_t *
+pin_op_push_for_select (pin_op_cursor_t *cur, const char *sel)
+{
+    size_t slen = strlen(sel);
+
+    /*
+     * SLAX passes a body-built argument as "ext:node-set($tmp)".  Our
+     * fragments are already node sets, so that's just "$tmp".
+     */
+    const char *cp = strstr(sel, ":node-set(");
+    if (cp && sel[slen - 1] == ')') {
+	const char *vp = cp + sizeof(":node-set(") - 1;
+	size_t vlen = (sel + slen - 1) - vp;
+	char *var = strndup(vp, vlen);
+	pin_op_t *push = NULL;
+
+	if (var && pin_classify_select(var) == SELK_VAR)
+	    push = pin_op_push_for_select(cur, var);
+	free(var);
+	if (push)
+	    return push;
+    }
+
+    if (pin_classify_select(sel) == SELK_LITERAL && slen >= 2
+	    && sel[slen - 1] == sel[0]) {
+	pin_workspace_t *pwp = cur->poc_rb->prb_workspace;
+	pin_op_t *push = pin_op_new(cur, NULL);
+	if (push == NULL)
+	    return NULL;
+
+	char *str = strndup(sel + 1, slen - 2);
+	if (str == NULL)
+	    return NULL;
+
+	push->po_type = PIN_OP_PUSH_STRING;
+	push->po_name = pin_namepool_atom(pwp, str, TRUE);
+	free(str);
+	return push;
+    }
+
+    return pin_op_push_for_test(cur, sel);
+}
+
+/*
+ * An mvar's initial value is the fourth argument of the
+ * slax:mvar-init() call in its select.  Returns that argument (to be
+ * freed), or NULL if there isn't one, meaning the mvar starts empty.
+ */
+static char *
+pin_compile_mvar_init_arg (const char *sel)
+{
+    static const char prefix[] = "slax:mvar-init(";
+    const char *cp = sel + sizeof(prefix) - 1;
+    const char *arg = NULL;
+    unsigned nargs = 1, depth = 0;
+    char quote = 0;
+
+    for (; *cp; cp++) {
+	if (quote) {
+	    if (*cp == quote)
+		quote = 0;
+	    continue;
+	}
+
+	if (*cp == '"' || *cp == '\'') {
+	    quote = *cp;
+	} else if (*cp == '(' || *cp == '[') {
+	    depth += 1;
+	} else if (*cp == ')' || *cp == ']') {
+	    if (depth == 0)
+		break;
+	    depth -= 1;
+	} else if (*cp == ',' && depth == 0) {
+	    nargs += 1;
+	    if (nargs == 4)
+		arg = cp + 1;
+	    else if (nargs == 5)
+		break;
+	}
+    }
+
+    if (arg == NULL)
+	return NULL;
+
+    while (*arg == ' ' || *arg == '\t' || *arg == '\n')
+	arg += 1;
+
+    const char *ep = cp;
+    while (ep > arg && (ep[-1] == ' ' || ep[-1] == '\t' || ep[-1] == '\n'))
+	ep -= 1;
+
+    return (ep > arg) ? strndup(arg, ep - arg) : NULL;
+}
+
+static void
+pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur);
+
+/*
+ * Compile body_node's children as content built for a value: the ops
+ * that make it run between BUILD_OPEN and BUILD_CLOSE, which leaves
+ * the fragment on the value stack.  Returns 0 or -1.
+ */
+static int
+pin_compile_build (xmlNodePtr body_node, pin_op_cursor_t *cur)
+{
+    pin_op_t *open = pin_op_new(cur, NULL);
+    if (open == NULL)
+	return -1;
+    open->po_type = PIN_OP_BUILD_OPEN;
+
+    pin_compile_ops_r(body_node, cur);
+
+    pin_op_t *close = pin_op_new(cur, NULL);
+    if (close == NULL)
+	return -1;
+    close->po_type = PIN_OP_BUILD_CLOSE;
+
+    return 0;
+}
+
+/*
+ * Emit STORE_VAR for "name".  Returns 0 or -1.
+ */
+static int
+pin_compile_store_var (pin_op_cursor_t *cur, const char *name)
+{
+    pin_op_t *store = pin_op_new(cur, NULL);
+    if (store == NULL)
+	return -1;
+
+    store->po_type = PIN_OP_STORE_VAR;
+    store->po_name = pin_namepool_atom(cur->poc_rb->prb_workspace, name, TRUE);
+    return 0;
+}
+
+/*
+ * Compile slax:append-to-variable or slax:set-variable, which SLAX
+ * makes for "append $x += ..." and "set $x = ...".  The value is the
+ * select, or else the body, built as content.  Returns 0 or -1.
+ */
+static int
+pin_compile_mvar_update (xmlNodePtr child, pin_op_cursor_t *cur,
+			 int append)
+{
+    xmlChar *vname = xmlGetProp(child, (const xmlChar *) "name");
+    if (vname == NULL || vname[0] == '\0') {
+	pin_error(cur->poc_rb, child, "%s: missing or empty name attribute",
+		  (const char *) child->name);
+	if (vname)
+	    xmlFree(vname);
+	return 0;
+    }
+
+    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+    int rc = -1;
+
+    if (!append) {
+	if (sel)
+	    rc = pin_op_push_for_select(cur, (const char *) sel) ? 0 : -1;
+	else
+	    rc = pin_compile_build(child, cur);
+
+	if (rc == 0)
+	    rc = pin_compile_store_var(cur, (const char *) vname);
+	goto out;
+    }
+
+    pin_name_id_t name_id = pin_namepool_atom(cur->poc_rb->prb_workspace,
+					      (const char *) vname, TRUE);
+    if (sel) {
+	if (pin_op_push_for_select(cur, (const char *) sel) == NULL)
+	    goto out;
+
+	pin_op_t *value = pin_op_new(cur, NULL);
+	if (value == NULL)
+	    goto out;
+	value->po_type = PIN_OP_APPEND_VALUE;
+	value->po_name = name_id;
+	rc = 0;
+	goto out;
+    }
+
+    pin_op_t *open = pin_op_new(cur, NULL);
+    if (open == NULL)
+	goto out;
+    open->po_type = PIN_OP_APPEND_OPEN;
+    open->po_name = name_id;
+
+    pin_compile_ops_r(child, cur);
+
+    pin_op_t *close = pin_op_new(cur, NULL);
+    if (close == NULL)
+	goto out;
+    close->po_type = PIN_OP_APPEND_CLOSE;
+    rc = 0;
+
+ out:
+    if (sel)
+	xmlFree(sel);
+    xmlFree(vname);
+    return rc;
+}
+
+/*
  * Recursively compile the children of body_node into PIN_OP_* sequences,
  * appended at the cursor position.  The layout mirrors the BIA_ compiler
  * above but uses pin_op_t nodes for the op-dispatch engine.
@@ -2272,6 +2569,21 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
 		} else {
 		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
+		}
+		xmlFree(sel);
+
+		pin_op_t *emit = pin_op_new(cur, NULL);
+		if (emit == NULL)
+		    return;
+		emit->po_type = PIN_OP_EMIT;
+		continue;
+	    }
+
+	    if (kind == SELK_COMPLEX && pin_select_is_scalar_call(s)) {
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL || pin_op_push_eval(cur, push, s) < 0) {
+		    xmlFree(sel);
+		    return;
 		}
 		xmlFree(sel);
 
@@ -2654,9 +2966,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	/*
 	 * xsl:variable name="x" select="expr"  -- compile expr, emit STORE_VAR.
 	 * xsl:variable name="x">text body</xsl:variable> -- push literal text.
+	 * xsl:variable name="x">content</xsl:variable> -- build a fragment.
 	 *
-	 * Supported select forms: @attr, ., 'literal', $var, child-path.
-	 * Complex expressions (predicates, functions) fall back to BIA_.
+	 * An mvar's select is a slax:mvar-init() call; its initial value
+	 * is the call's fourth argument.
 	 */
 	if (pin_is_xsl(child, "variable")) {
 	    xmlChar *vname = xmlGetProp(child, (const xmlChar *) "name");
@@ -2669,61 +2982,48 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 
 	    xmlChar *sel = xmlGetProp(child, (const xmlChar *) "select");
+	    xmlChar *mvar = xmlGetProp(child, (const xmlChar *) "mvarname");
 
-	    if (sel != NULL) {
-		const char *s = (const char *) sel;
-		size_t slen = strlen(s);
+	    /* An mvar's shadow ("slax-x") variable isn't needed here */
+	    if (mvar && sel == NULL && child->children == NULL) {
+		xmlFree(mvar);
+		xmlFree(vname);
+		continue;
+	    }
+	    if (mvar)
+		xmlFree(mvar);
 
-		pin_op_t *push = pin_op_new(cur, NULL);
-		if (push == NULL) {
-		    xmlFree(vname);
-		    xmlFree(sel);
-		    return;
+	    /*
+	     * An mvar starts with its initial value, or else empty.  A
+	     * body-built value is in the variable named by "ivarname".
+	     */
+	    const char *expr = (const char *) sel;
+	    char *init = NULL;
+	    if (sel && strncmp(expr, "slax:mvar-init(", 15) == 0) {
+		xmlChar *ivar = xmlGetProp(child, (const xmlChar *) "ivarname");
+		if (ivar) {
+		    size_t len = strlen((const char *) ivar) + 2;
+		    init = malloc(len);
+		    if (init)
+			snprintf(init, len, "$%s", (const char *) ivar);
+		    xmlFree(ivar);
+		} else {
+		    init = pin_compile_mvar_init_arg(expr);
 		}
+		expr = init;
+	    }
 
-		switch (pin_classify_select(s)) {
-		case SELK_LITERAL: {
-		    /* Strip enclosing quotes in-place; sel is freed below */
-		    char q = s[0];
-		    if (slen >= 2 && sel[slen - 1] == q) {
-			sel[slen - 1] = '\0';
-			push->po_type = PIN_OP_PUSH_STRING;
-			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-		    }
-		    break;
-		}
-		case SELK_ATTR:
-		    push->po_type = PIN_OP_PUSH_ATTR;
-		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-		    break;
-		case SELK_VAR:
-		    push->po_type = PIN_OP_LOAD_VAR;
-		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-		    break;
-		case SELK_SELF:
-		    push->po_type = PIN_OP_PUSH_TEXT;
-		    push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-		    break;
-		case SELK_DOWN:
-		    /* Downward path: collect matching nodes as a nodeset */
-		    push->po_type = PIN_OP_PUSH_NODES;
-		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
-		    break;
-		case SELK_NUMBER:
-		    push->po_type = PIN_OP_PUSH_STRING;
-		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
-		    break;
-		default:
-		    if (pin_op_push_eval(cur, push, s) < 0) {
-			xmlFree(vname);
-			xmlFree(sel);
-			return;
-		    }
-		    break;
-		}
-		xmlFree(sel);
+	    int rc = 0;
+	    if (expr) {
+		if (pin_op_push_for_select(cur, expr) == NULL)
+		    rc = -1;
+	    } else if (pin_has_element_child(child)) {
+		rc = pin_compile_build(child, cur);
 	    } else {
-		/* Body form: use first non-blank text child as literal value */
+		/*
+		 * A text-only body is a string.  So is an mvar with no
+		 * initial value, which libslax makes an empty string.
+		 */
 		const char *text = NULL;
 		for (xmlNodePtr gc = child->children; gc; gc = gc->next) {
 		    if (gc->type == XML_TEXT_NODE && gc->content
@@ -2735,21 +3035,31 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 
 		pin_op_t *push = pin_op_new(cur, NULL);
 		if (push == NULL) {
-		    xmlFree(vname);
-		    return;
+		    rc = -1;
+		} else {
+		    push->po_type = PIN_OP_PUSH_STRING;
+		    push->po_name = pin_namepool_atom(pwp, text ? text : "",
+						      TRUE);
 		}
-		push->po_type = PIN_OP_PUSH_STRING;
-		push->po_name = pin_namepool_atom(pwp, text ? text : "", TRUE);
 	    }
 
-	    pin_op_t *store = pin_op_new(cur, NULL);
-	    if (store == NULL) {
-		xmlFree(vname);
-		return;
-	    }
-	    store->po_type = PIN_OP_STORE_VAR;
-	    store->po_name = pin_namepool_atom(pwp, (const char *) vname, TRUE);
+	    if (rc == 0)
+		rc = pin_compile_store_var(cur, (const char *) vname);
+
+	    free(init);
+	    if (sel)
+		xmlFree(sel);
 	    xmlFree(vname);
+	    if (rc < 0)
+		return;
+	    continue;
+	}
+
+	if (pin_is_slax(child, "append-to-variable")
+		|| pin_is_slax(child, "set-variable")) {
+	    if (pin_compile_mvar_update(child, cur,
+			pin_is_slax(child, "append-to-variable")) < 0)
+		return;
 	    continue;
 	}
 
@@ -2968,60 +3278,19 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		    continue;
 		}
 
-		/* Compile value expression */
-		const char *s = wpsel ? (const char *) wpsel : ".";
-
-		pin_op_t *push = pin_op_new(cur, NULL);
-		if (push == NULL) {
-		    if (wpname)
-			xmlFree(wpname);
+		/* Compile value expression, or build the body's content */
+		int rc;
+		if (wpsel == NULL && pin_has_element_child(wpc))
+		    rc = pin_compile_build(wpc, cur);
+		else
+		    rc = pin_op_push_for_select(cur,
+				wpsel ? (const char *) wpsel : ".") ? 0 : -1;
+		if (rc < 0) {
+		    xmlFree(wpname);
 		    if (wpsel)
 			xmlFree(wpsel);
 		    xmlFree(tname);
 		    return;
-		}
-		switch (pin_classify_select(s)) {
-		case SELK_LITERAL: {
-		    /* Strip enclosing quotes in-place; wpsel is freed below */
-		    char q = s[0];
-		    size_t slen = strlen(s);
-		    if (slen >= 2 && wpsel[slen - 1] == q) {
-			wpsel[slen - 1] = '\0';
-			push->po_type = PIN_OP_PUSH_STRING;
-			push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-		    }
-		    break;
-		}
-		case SELK_ATTR:
-		    push->po_type = PIN_OP_PUSH_ATTR;
-		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-		    break;
-		case SELK_VAR:
-		    push->po_type = PIN_OP_LOAD_VAR;
-		    push->po_name = pin_namepool_atom(pwp, s + 1, TRUE);
-		    break;
-		case SELK_SELF:
-		    push->po_type = PIN_OP_PUSH_TEXT;
-		    push->po_name = pin_namepool_atom(pwp, ".", TRUE);
-		    break;
-		case SELK_DOWN:
-		    push->po_type = PIN_OP_PUSH_NODES;
-		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
-		    break;
-		case SELK_NUMBER:
-		    push->po_type = PIN_OP_PUSH_STRING;
-		    push->po_name = pin_namepool_atom(pwp, s, TRUE);
-		    break;
-		default:
-		    if (pin_op_push_eval(cur, push, s) < 0) {
-			if (wpname)
-			    xmlFree(wpname);
-			if (wpsel)
-			    xmlFree(wpsel);
-			xmlFree(tname);
-			return;
-		    }
-		    break;
 		}
 
 		pin_op_t *wp = pin_op_new(cur, NULL);
@@ -3511,6 +3780,43 @@ pin_compile_apply_add_split (pin_rulebook_t *rb, const char *match_str,
  * value and evaluate to "" at runtime.
  * Returns 0 (no count contribution, never a fatal error).
  */
+/*
+ * Add ops that build the content of global variable "name" and bind
+ * it, to the end of prb_global_ops.
+ */
+static void
+pin_compile_global_build (xmlNodePtr child, pin_rulebook_t *rb,
+			  const char *name)
+{
+    pin_op_id_t head = pin_op_id_null_atom();
+    pin_op_cursor_t cur = {
+	.poc_nextp = &head,
+	.poc_rb = rb,
+	.poc_src_file = pin_name_id_null_atom(),
+    };
+
+    uint32_t seeded = pin_compile_ns_seed(child, &cur);
+    if (pin_compile_build(child, &cur) == 0)
+	pin_compile_store_var(&cur, name);
+    if (seeded)
+	pin_compile_ns_pop(&cur, seeded);
+    free(cur.poc_ns_stack);
+
+    if (pin_op_id_is_null(head))
+	return;
+
+    if (pin_op_id_is_null(rb->prb_global_ops)) {
+	rb->prb_global_ops = head;
+	return;
+    }
+
+    pin_op_t *opp = pin_op_addr(rb, rb->prb_global_ops);
+    while (opp && !pin_op_id_is_null(opp->po_next))
+	opp = pin_op_addr(rb, opp->po_next);
+    if (opp)
+	opp->po_next = head;
+}
+
 static int
 pin_compile_global_var (xmlNodePtr child, pin_rulebook_t *rb)
 {
@@ -3525,7 +3831,15 @@ pin_compile_global_var (xmlNodePtr child, pin_rulebook_t *rb)
 					  (const char *) vname, TRUE);
     pin_name_id_t vid = pin_name_id_null_atom();
     xmlChar *vsel = xmlGetProp(child, (const xmlChar *) "select");
-    if (vsel && vsel[0]) {
+    if ((vsel == NULL || vsel[0] == '\0') && pin_has_element_child(child)) {
+	/*
+	 * Content needs ops to build it, so the binding is made at run
+	 * time, by prb_global_ops.  The empty string registered below
+	 * only stands in if that build fails.
+	 */
+	pin_compile_global_build(child, rb, (const char *) vname);
+	vid = pin_namepool_atom(rb->prb_workspace, "", TRUE);
+    } else if (vsel && vsel[0]) {
 	const char *s = (const char *) vsel;
 	size_t slen = strlen(s);
 	/* String literal: 'value' or "value" */
