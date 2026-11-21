@@ -345,6 +345,34 @@ fi
 AM_CONDITIONAL([HAVE_SQLCIPHER], [test "$USE_SQLCIPHER" != ""])
 
 #
+# Check the availability of isocline
+#
+AC_ARG_WITH(isocline, [  --with-isocline[=DIR]  Path to an isocline checkout (or "github" to clone our fork)])
+if test "$with_isocline" = "github"; then
+    if ! test -d isocline ; then
+        git clone -b libslax https://github.com/philshafer/isocline
+    fi
+    with_isocline=`pwd`/isocline
+fi
+if test "$with_isocline" != "" ; then
+    case $with_isocline in
+    /*) ;;
+    *) with_isocline=`pwd`/$with_isocline ;;
+    esac
+    if test -f "$with_isocline/include/isocline.h" ; then
+        ISOCLINE_DIR=$with_isocline
+        AC_DEFINE([WITH_ISOCLINE], [1], "Use isocline for line editing")
+        WITH_ISOCLINE=yes
+        ISOCLINE_CFLAGS="-I$with_isocline/include -I$with_isocline/src"
+    else
+        AC_MSG_ERROR([no include/isocline.h under ${with_isocline} for --with-isocline])
+    fi
+fi
+AC_SUBST(ISOCLINE_DIR)
+AC_SUBST(ISOCLINE_CFLAGS)
+AM_CONDITIONAL([WITH_ISOCLINE], [test "$WITH_ISOCLINE" = "yes"])
+
+#
 # --- Logic for bxml components
 #
 
@@ -2226,6 +2254,7 @@ AC_MSG_NOTICE([summary of build options:
   libcurl version:  ${CURLVERS}
   libcurl cflags:   ${LIBCURL_CFLAGS}
   libcurl libs:     ${LIBCURL_LIBS}
+  isocline cflags:  ${ISOCLINE_CFLAGS}
   bison version:    ${BISON_VERSION}
   sqlite3 version:  ${SQLITE3_VERSION}
 
@@ -2237,6 +2266,7 @@ AC_MSG_NOTICE([summary of build options:
   libxslt tests:    ${WITH_LIBXSLT_TESTS:-no}
   sqlite3:          ${HAVE_SQLITE3:-no}
   sqlcipher:        ${HAVE_SQLCIPHER:-no}
+  isocline:         ${WITH_ISOCLINE:-no}
   humanize:         ${HAVE_HUMANIZE_NUMBER:-no}
   clang LTO:        ${ENABLE_LTO:-no} (inlines: ${ENABLE_ACCESSOR_INLINES:-no})
 ])
