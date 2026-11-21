@@ -41,6 +41,10 @@ extern FILE *rl_instream;
 extern FILE *rl_outstream;
 #endif /* defined(HAVE_READLINE) || defined(HAVE_LIBEDIT) */
 
+#if defined(WITH_ISOCLINE)
+#include <isocline.h>
+#endif /* defined(WITH_ISOCLINE) */
+
 /* Callback functions for input and output */
 static slaxInputCallback_t slaxInputCallback;
 static slaxOutputCallback_t slaxOutputCallback;
@@ -48,6 +52,7 @@ static xmlOutputWriteCallback slaxWriteCallback;
 static slaxErrorCallback_t slaxErrorCallback;
 
 static int slaxIoNoReadline UNUSED; /* If set, don't use readline/libedit */
+static int slaxIoNoTty UNUSED;	/* If set, avoid isocline's raw tty mode */
 
 static FILE *slaxIoTty;
 
@@ -265,8 +270,31 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
 	res = (char *) xmlStrdup((xmlChar *) cp);
 	free(cp);
 	return res;
-    
-#endif /* HAVE_READLINE || HAVE_LIBEDIT */
+
+#elif defined(WITH_ISOCLINE)
+    } else if (!slaxIoNoReadline && !slaxIoNoTty) {
+	char *res;
+
+	cp = ic_readline_ex(prompt, NULL, NULL, NULL, NULL);
+	if (cp == NULL)
+	    return NULL;
+
+	/*
+	 * ic_readline_ex() always records the line into isocline's
+	 * own history, regardless of SIF_HISTORY; remove it again
+	 * when the caller didn't ask for history, matching the
+	 * add_history() behavior above.  isocline itself skips empty
+	 * and single-character lines, so there's nothing to remove
+	 * for those.
+	 */
+	if (!(flags & SIF_HISTORY) && strlen(cp) > 1)
+	    ic_history_remove_last();
+
+	res = (char *) xmlStrdup((xmlChar *) cp);
+	free(cp);
+	return res;
+
+#endif /* HAVE_READLINE || HAVE_LIBEDIT || WITH_ISOCLINE */
 
     } else {
 	char buf[BUFSIZ];
@@ -320,6 +348,8 @@ void
 slaxIoUseStdio (unsigned flags)
 {
     FILE *inst UNUSED = slaxIoTty;
+
+    slaxIoNoTty = (flags & SIF_NO_TTY) ? TRUE : FALSE;
 
 #if defined(HAVE_READLINE) || defined(HAVE_LIBEDIT)
     inst = rl_instream;
