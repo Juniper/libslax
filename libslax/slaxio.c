@@ -43,6 +43,29 @@ extern FILE *rl_outstream;
 
 #if defined(WITH_ISOCLINE)
 #include <isocline.h>
+
+/*
+ * Forward a completion match from slaxDebugComplete() to isocline,
+ * replacing the "wordlen" bytes of the in-progress word already
+ * typed.
+ */
+static void
+slaxIoCompleteEmit (const char *name, const char *help, size_t wordlen,
+	void *arg)
+{
+    ic_add_completion_prim(arg, name, NULL, help, (long) wordlen, 0);
+}
+
+/*
+ * isocline completer for sdb commands: "prefix" is the input text up
+ * to the cursor, from which slaxDebugComplete() resolves both which
+ * command table applies and the in-progress word to complete.
+ */
+static void
+slaxIoCompleter (ic_completion_env_t *cenv, const char *prefix)
+{
+    slaxDebugComplete(prefix, slaxIoCompleteEmit, cenv);
+}
 #endif /* defined(WITH_ISOCLINE) */
 
 /* Callback functions for input and output */
@@ -275,7 +298,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
     } else if (!slaxIoNoReadline && !slaxIoNoTty) {
 	char *res;
 
-	cp = ic_readline_ex(prompt, NULL, NULL, NULL, NULL);
+	cp = ic_readline_ex(prompt, slaxIoCompleter, NULL, NULL, NULL);
 	if (cp == NULL)
 	    return NULL;
 

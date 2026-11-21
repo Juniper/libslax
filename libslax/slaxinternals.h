@@ -174,4 +174,24 @@ xmlNodePtr
 slaxLoadBufferAt (const char *filename, char *input,
 		   xmlNodePtr context_node, int ttype);
 
+/* --- slaxdebugger.c -- */
+
+/*
+ * Callback for slaxDebugComplete(): invoked once per command name
+ * matching the in-progress word.  "wordlen" is the number of bytes
+ * of that in-progress word a completion should replace.
+ */
+typedef void (*slaxDebugCompleteFunc_t)(const char *name, const char *help,
+	size_t wordlen, void *arg);
+
+/*
+ * Find completions for sdb commands, given the input text up to the
+ * cursor ("line").  Walks the same dc_nested command tables that
+ * command dispatch descends through, then calls "emit" once per
+ * command name in the resulting table that the in-progress (final)
+ * word in "line" is a prefix of.
+ */
+void
+slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg);
+
 #endif /* SLAX_SLAXINTERNALS_H */

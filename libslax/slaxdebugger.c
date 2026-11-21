@@ -1275,6 +1275,78 @@ slaxDebugFindCommand (slaxDebugCommand_t *table, int *argcp, const char **argv)
 }
 
 /*
+ * Split the input text up to the cursor into its complete words
+ * (returned via "argv"/"argcp", the same way slaxDebugSplitArgs()
+ * would) and the trailing in-progress word, whose length is returned
+ * via "wordlenp".  The in-progress word is empty when "line" is empty
+ * or ends in whitespace.
+ */
+static const char *
+slaxDebugCompleteWords (const char *line, const char **argv, int maxargs,
+	int *argcp, size_t *wordlenp)
+{
+    size_t len = strlen(line);
+    size_t wordlen = 0;
+
+    while (wordlen < len && !isspace((int) line[len - 1 - wordlen]))
+	wordlen += 1;
+
+    if (wordlen == len) {
+	*argcp = 0;
+    } else {
+	char *copy = ALLOCADUP(line);
+	copy[len - wordlen] = '\0';
+	*argcp = slaxDebugSplitArgs(copy, argv, maxargs);
+    }
+
+    *wordlenp = wordlen;
+    return line + (len - wordlen);
+}
+
+/*
+ * Resolve the command table reached by consuming the "argc" complete
+ * words in "argv", the same way slaxDebugFindCommand() descends
+ * dc_nested tables.  Returns NULL if a word doesn't match, or if the
+ * last word's command has no nested table to complete the next word
+ * against.
+ */
+static slaxDebugCommand_t *
+slaxDebugCompleteTable (int argc, const char **argv)
+{
+    slaxDebugCommand_t *match;
+    int argcp = 0;
+
+    if (argc == 0)
+	return slaxDebugCmdTable;
+
+    match = slaxDebugFindCommand(NULL, &argcp, argv);
+    if (match == NULL || argcp != argc)
+	return NULL;
+
+    return match->dc_nested;
+}
+
+void
+slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg)
+{
+    const char *argv[MAXARGS];
+    int argc;
+    size_t wordlen;
+    const char *word = slaxDebugCompleteWords(line, argv, MAXARGS, &argc,
+						&wordlen);
+    slaxDebugCommand_t *table = slaxDebugCompleteTable(argc, argv);
+    slaxDebugCommand_t *cmdp;
+
+    if (table == NULL)
+	return;
+
+    for (cmdp = table; cmdp->dc_command; cmdp++) {
+	if (strncmp(cmdp->dc_command, word, wordlen) == 0)
+	    emit(cmdp->dc_command, cmdp->dc_help, wordlen, arg);
+    }
+}
+
+/*
  * 'break' command
  */
 static void
@@ -1421,6 +1493,31 @@ static void
 slaxDebugCmdClear (DC_ARGS)
 {
     slaxOutput("usage: clear watch variable [$name | num]");
+}
+
+static void
+slaxDebugCompleteEmitOutput (const char *name, const char *help UNUSED,
+	size_t wordlen UNUSED, void *arg UNUSED)
+{
+    slaxOutput("%s", name);
+}
+
+/*
+ * Hidden 'complete' command, exposing slaxDebugComplete() for testing
+ * without a tty: completes the text following "complete ", one match
+ * per output line.
+ */
+static void
+slaxDebugCmdComplete (DC_ARGS)
+{
+    const char *line = commandline;
+
+    while (*line && !isspace((int) *line))
+	line += 1;
+    while (*line && isspace((int) *line))
+	line += 1;
+
+    slaxDebugComplete(line, slaxDebugCompleteEmitOutput, NULL);
 }
 
 static int
@@ -3469,6 +3566,8 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       "clear watch variable [$var | num]  Clear a watchpoint",
       NULL, slaxDebugClearCmdTable,
     },
+
+    { "complete",      8, slaxDebugCmdComplete, NULL, NULL, NULL }, /* Hidden */
 
     { "condition",     4, slaxDebugCmdCondition,
       "condition <num> [expr]  Set, change, or clear a breakpoint's "
