@@ -82,6 +82,7 @@ static struct opts {
     int o_do_xml_to_json;
     int o_do_xml_to_yaml;
 
+    int o_allow_hidden;
     int o_check_namespaces;
     int o_dump_tree;
     int o_echo_input;
@@ -121,6 +122,7 @@ static const char slaxproc_help[] =
 "\t--xslt-to-slax OR -s: turn XSLT into SLAX\n"
 "\n"
 "    Options:\n"
+"\t--allow-hidden: allow the debugger's hidden test-only commands\n"
 "\t--debug OR -d: enable the SLAX/XSLT debugger\n"
 "\t--echo-input: echo each debugger command before running it\n"
 "\t--empty OR -E: give an empty document for input\n"
@@ -164,6 +166,7 @@ static const char slaxproc_help[] =
     "\n";
 
 static struct option long_opts[] = {
+    { "allow-hidden", no_argument, &opts.o_allow_hidden, 1 },
     { "check", no_argument, NULL, 'c' },
     { "xpath", required_argument, NULL, 'X' },
     { "format", no_argument, NULL, 'F' },
@@ -1348,6 +1351,9 @@ main (int argc UNUSED, char **argv)
 		char *str = check_arg("width");
 		if (str)
 		    opt_width = atoi(str);
+
+	    } else if (opts.o_allow_hidden) {
+		slaxDebugSetAllowHidden(1);
 
 	    } else if (opts.o_no_randomize) {
 		randomize = 0;

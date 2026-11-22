@@ -151,6 +151,8 @@ const char **slaxDebugIncludes;
 /* Flags from slaxDebugInitFlags() */
 slaxDebugFlags_t slaxDebugFlags;
 
+int slaxDebugAllowHidden; /* Don't allow hidden commands */
+
 /*
  * Echo a line of input just read via slaxInput(), if SDBF_ECHO_INPUT
  * is set.  slaxInput() already writes the prompt (sans newline), so
@@ -1228,6 +1230,15 @@ slaxDebugAddBreakpoint (DC_ARGS, int temporary)
 		    xmlDocGetURL(xmlNodeGetDoc(node)), xmlGetLineNo(node));
 }
 
+/*
+ * Allow test jig to allow hidden commands
+ */
+void
+slaxDebugSetAllowHidden (int value)
+{
+    slaxDebugAllowHidden = value;
+}
+
 /**
  * Find a command, descending through "dc_nested" tables one word at
  * a time.  Falls back to the deepest match found so far if a later
@@ -1242,15 +1253,23 @@ slaxDebugFindCommand (slaxDebugCommand_t *table, int *argcp, const char **argv)
 {
     slaxDebugCommand_t *cmdp, *match = NULL;
     int i;
+    int allow_hidden = slaxDebugAllowHidden;
 
     if (table == NULL)
 	table = slaxDebugCmdTable;
+
+    if (table != slaxDebugCmdTable)
+	allow_hidden = FALSE;
 
     for (i = 0; argv[i]; i++) {
 	const char *name = argv[i];
 	slaxDebugCommand_t *found = NULL;
 
 	for (cmdp = table; cmdp->dc_command; cmdp++) {
+	    /* All the hidden commands appear after the "?" command */
+	    if (!allow_hidden && *cmdp->dc_command == '?')
+		break;
+
 	    if (slaxDebugCheckAbbrev(cmdp->dc_command, cmdp->dc_min,
 				      name, strlen(name))) {
 		found = cmdp;
@@ -1272,35 +1291,6 @@ slaxDebugFindCommand (slaxDebugCommand_t *table, int *argcp, const char **argv)
     }
 
     return match;
-}
-
-/*
- * Split the input text up to the cursor into its complete words
- * (returned via "argv"/"argcp", the same way slaxDebugSplitArgs()
- * would) and the trailing in-progress word, whose length is returned
- * via "wordlenp".  The in-progress word is empty when "line" is empty
- * or ends in whitespace.
- */
-static const char *
-slaxDebugCompleteWords (const char *line, const char **argv, int maxargs,
-	int *argcp, size_t *wordlenp)
-{
-    size_t len = strlen(line);
-    size_t wordlen = 0;
-
-    while (wordlen < len && !isspace((int) line[len - 1 - wordlen]))
-	wordlen += 1;
-
-    if (wordlen == len) {
-	*argcp = 0;
-    } else {
-	char *copy = ALLOCADUP(line);
-	copy[len - wordlen] = '\0';
-	*argcp = slaxDebugSplitArgs(copy, argv, maxargs);
-    }
-
-    *wordlenp = wordlen;
-    return line + (len - wordlen);
 }
 
 /*
@@ -1330,10 +1320,21 @@ void
 slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg)
 {
     const char *argv[MAXARGS];
-    int argc;
-    size_t wordlen;
-    const char *word = slaxDebugCompleteWords(line, argv, MAXARGS, &argc,
-						&wordlen);
+    int argc = 0;
+    size_t len = strlen(line);
+    size_t wordlen = 0;
+
+    while (wordlen < len && !isspace((int) line[len - 1 - wordlen]))
+	wordlen += 1;
+
+    const char *word = line + (len - wordlen);
+
+    if (wordlen != len) {
+	char *copy = ALLOCADUP(line);
+	copy[len - wordlen] = '\0';
+	argc = slaxDebugSplitArgs(copy, argv, MAXARGS);
+    }
+
     slaxDebugCommand_t *table = slaxDebugCompleteTable(argc, argv);
     slaxDebugCommand_t *cmdp;
 
@@ -1344,6 +1345,69 @@ slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg)
 	if (strncmp(cmdp->dc_command, word, wordlen) == 0)
 	    emit(cmdp->dc_command, cmdp->dc_help, wordlen, arg);
     }
+}
+
+int
+slaxDebugInQuote (const char *input, size_t cursor)
+{
+    char quote = '\0';
+    size_t i;
+
+    for (i = 0; i < cursor; i++) {
+	if (quote != '\0') {
+	    if (input[i] == quote)
+		quote = '\0';
+	} else if (input[i] == '\'' || input[i] == '"') {
+	    quote = input[i];
+	}
+    }
+
+    return quote != '\0';
+}
+
+const char *
+slaxDebugDabbrevMatch (const char *entry, const char *prefix,
+	size_t prefixlen, size_t *lenp)
+{
+    const char *cp = entry;
+    const char *start;
+
+    for (;;) {
+	while (*cp != '\0' && isspace((int) *cp))
+	    cp += 1;
+	if (*cp == '\0')
+	    return NULL;
+
+	start = cp;
+	while (*cp != '\0' && !isspace((int) *cp))
+	    cp += 1;
+
+	if ((size_t) (cp - start) > prefixlen
+		&& strncmp(start, prefix, prefixlen) == 0) {
+	    *lenp = (size_t) (cp - start);
+	    return start;
+	}
+    }
+}
+
+const char *
+slaxDebugLastToken (const char *entry, size_t *lenp)
+{
+    const char *end = entry + strlen(entry);
+    const char *start;
+
+    while (end > entry && isspace((int) end[-1]))
+	end -= 1;
+
+    start = end;
+    while (start > entry && !isspace((int) start[-1]))
+	start -= 1;
+
+    if (start == entry)
+	return NULL;
+
+    *lenp = (size_t) (end - start);
+    return start;
 }
 
 /*
@@ -1518,6 +1582,81 @@ slaxDebugCmdComplete (DC_ARGS)
 	line += 1;
 
     slaxDebugComplete(line, slaxDebugCompleteEmitOutput, NULL);
+}
+
+/*
+ * Hidden 'inquote' command, exposing slaxDebugInQuote() for testing
+ * without a tty: reports whether the text following "inquote " ends
+ * inside an open quote.
+ */
+static void
+slaxDebugCmdInQuote (DC_ARGS)
+{
+    const char *line = commandline;
+
+    while (*line && !isspace((int) *line))
+	line += 1;
+    while (*line && isspace((int) *line))
+	line += 1;
+
+    slaxOutput("%s", slaxDebugInQuote(line, strlen(line)) ? "true" : "false");
+}
+
+/*
+ * Hidden 'dabbrev' command, exposing slaxDebugDabbrevMatch() for
+ * testing without a tty: "dabbrev prefix entry..." looks for a word
+ * in the (possibly multi-word) "entry" text that properly extends
+ * "prefix".
+ */
+static void
+slaxDebugCmdDabbrev (DC_ARGS)
+{
+    const char *line = commandline;
+    const char *prefix;
+    size_t prefixlen, matchlen;
+    const char *match;
+
+    while (*line && !isspace((int) *line))
+	line += 1;
+    while (*line && isspace((int) *line))
+	line += 1;
+
+    prefix = line;
+    while (*line && !isspace((int) *line))
+	line += 1;
+    prefixlen = (size_t) (line - prefix);
+    while (*line && isspace((int) *line))
+	line += 1;
+
+    match = slaxDebugDabbrevMatch(line, prefix, prefixlen, &matchlen);
+    if (match == NULL)
+	slaxOutput("no match");
+    else
+	slaxOutput("%.*s", (int) matchlen, match);
+}
+
+/*
+ * Hidden 'lastarg' command, exposing slaxDebugLastToken() for testing
+ * without a tty: reports the last token of the (possibly multi-word)
+ * text following "lastarg ", or "none" if it has one token or fewer.
+ */
+static void
+slaxDebugCmdLastArg (DC_ARGS)
+{
+    const char *line = commandline;
+    size_t len;
+    const char *token;
+
+    while (*line && !isspace((int) *line))
+	line += 1;
+    while (*line && isspace((int) *line))
+	line += 1;
+
+    token = slaxDebugLastToken(line, &len);
+    if (token == NULL)
+	slaxOutput("none");
+    else
+	slaxOutput("%.*s", (int) len, token);
 }
 
 static int
@@ -3610,8 +3749,6 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       NULL, slaxDebugInfoCmdTable,
     },
 
-    { "?",	       1, slaxDebugCmdHelp, NULL, NULL, NULL }, /* Hidden */
-
     { "list",	       1, slaxDebugCmdList,
       "list [loc]      List contents of the current script",
       NULL, NULL,
@@ -3694,6 +3831,16 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
       "quit            Quit debugger",
       NULL, NULL,
     },
+
+    /*
+     * These hidden commands are here to allow the test jig
+     * (tests/sdb/XXX.cmd) a means of triggering them to test their
+     * behavior.  See slaxDebugAllowHidden.
+     */
+    { "?",	       1, slaxDebugCmdHelp, NULL, NULL, NULL }, /* Hidden */
+    { "dabbrev",       7, slaxDebugCmdDabbrev, NULL, NULL, NULL }, /* Hidden */
+    { "inquote",       7, slaxDebugCmdInQuote, NULL, NULL, NULL }, /* Hidden */
+    { "lastarg",       7, slaxDebugCmdLastArg, NULL, NULL, NULL }, /* Hidden */
 
     { NULL, 0, NULL, NULL, NULL, NULL }
 };

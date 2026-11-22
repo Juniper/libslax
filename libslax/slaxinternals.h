@@ -194,4 +194,37 @@ typedef void (*slaxDebugCompleteFunc_t)(const char *name, const char *help,
 void
 slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg);
 
+/*
+ * Report whether "cursor" bytes into "input" falls inside an open
+ * single- or double-quote, scanning from the start of the line.
+ * Used by the "?" key binding to decide between self-inserting the
+ * literal character and showing completions.
+ */
+int
+slaxDebugInQuote (const char *input, size_t cursor);
+
+/*
+ * Find the first word in "entry" that is a proper (longer) extension
+ * of "prefix", for the ESC-/ dabbrev-expand key binding.  Returns
+ * NULL if there is none, else the start of the match with its length
+ * in "lenp".
+ */
+const char *
+slaxDebugDabbrevMatch (const char *entry, const char *prefix,
+	size_t prefixlen, size_t *lenp);
+
+/*
+ * Find the last token of "entry", for the ESC-. insert-last-argument
+ * key binding.  Returns NULL if "entry" has one token or fewer, else
+ * the start of the token with its length in "lenp".
+ */
+const char *
+slaxDebugLastToken (const char *entry, size_t *lenp);
+
+/*
+ * Allow test jig to allow hidden commands
+ */
+void
+slaxDebugSetAllowHidden (int value);
+
 #endif /* SLAX_SLAXINTERNALS_H */

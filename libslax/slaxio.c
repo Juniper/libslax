@@ -66,6 +66,187 @@ slaxIoCompleter (ic_completion_env_t *cenv, const char *prefix)
 {
     slaxDebugComplete(prefix, slaxIoCompleteEmit, cenv);
 }
+
+/*
+ * Emit one completion match for the "?" key: print the command name
+ * and, if any, its help text.
+ */
+static void
+slaxIoCompleteHelpEmit (const char *name, const char *help,
+	size_t wordlen UNUSED, void *arg UNUSED)
+{
+    if (help != NULL)
+	ic_printf("  %s - %s\n", name, help);
+    else
+	ic_printf("  %s\n", name);
+}
+
+/*
+ * "?": inside an open quote, self-insert the literal "?" so quoted
+ * text (e.g. an XPath string) isn't interrupted; otherwise print the
+ * completions for the word up to the cursor (mid-word included)
+ * without inserting anything.  The quote-scan itself is
+ * slaxDebugInQuote(), an isocline-agnostic function tested headlessly
+ * via the hidden 'inquote' command.
+ */
+static void
+slaxIoKeyHelp (ic_keyaction_env_t *kenv)
+{
+    long cursor;
+    const char *input = ic_keyaction_input(kenv, &cursor);
+    char *prefix;
+
+    if (slaxDebugInQuote(input, (size_t) cursor)) {
+	ic_keyaction_replace(kenv, "?", 0, 0);
+	return;
+    }
+
+    prefix = (char *) alloca(cursor + 1);
+    memcpy(prefix, input, cursor);
+    prefix[cursor] = '\0';
+
+    ic_printf("\n");
+    slaxDebugComplete(prefix, slaxIoCompleteHelpEmit, NULL);
+}
+
+static char *slaxIoDabbrevPrefix;
+static long slaxIoDabbrevNext;
+static long slaxIoDabbrevSuffixLen;
+
+/*
+ * ESC-/: dabbrev-style expansion of the word before the cursor,
+ * searching backward through history (skipping history index 0, the
+ * in-progress line's own placeholder entry) for a word that properly
+ * extends it.  Repeated presses continue the same search, replacing
+ * the previous expansion with the next match further back.  The word
+ * match itself is slaxDebugDabbrevMatch(), an isocline-agnostic
+ * function tested headlessly via the hidden 'dabbrev' command; only
+ * the history walk and per-callback search state are isocline-side.
+ */
+static void
+slaxIoKeyDabbrevExpand (ic_keyaction_env_t *kenv)
+{
+    long cursor;
+    const char *input = ic_keyaction_input(kenv, &cursor);
+    long wordstart = cursor;
+    long wordlen;
+    size_t prefixlen;
+    long count;
+    const char *match = NULL;
+    size_t matchlen = 0;
+    bool continuing;
+
+    while (wordstart > 0 && !isspace((unsigned char) input[wordstart - 1]))
+	wordstart -= 1;
+
+    wordlen = cursor - wordstart;
+    prefixlen = slaxIoDabbrevPrefix ? strlen(slaxIoDabbrevPrefix) : 0;
+    continuing = slaxIoDabbrevPrefix != NULL
+	    && (size_t) wordlen == prefixlen + (size_t) slaxIoDabbrevSuffixLen
+	    && strncmp(input + wordstart, slaxIoDabbrevPrefix, prefixlen) == 0;
+
+    if (!continuing) {
+	free(slaxIoDabbrevPrefix);
+	slaxIoDabbrevPrefix = strndup(input + wordstart, (size_t) wordlen);
+	slaxIoDabbrevNext = 1;
+	slaxIoDabbrevSuffixLen = 0;
+    }
+
+    prefixlen = strlen(slaxIoDabbrevPrefix);
+    count = ic_history_count();
+
+    for ( ; slaxIoDabbrevNext < count; slaxIoDabbrevNext += 1) {
+	const char *entry = ic_history_get(slaxIoDabbrevNext);
+
+	if (entry == NULL)
+	    continue;
+
+	match = slaxDebugDabbrevMatch(entry, slaxIoDabbrevPrefix, prefixlen,
+		&matchlen);
+	if (match != NULL) {
+	    slaxIoDabbrevNext += 1;
+	    break;
+	}
+    }
+
+    if (match != NULL) {
+	size_t suffixlen = matchlen - prefixlen;
+	char *suffix = (char *) alloca(suffixlen + 1);
+
+	memcpy(suffix, match + prefixlen, suffixlen);
+	suffix[suffixlen] = '\0';
+
+	ic_keyaction_replace(kenv, suffix, slaxIoDabbrevSuffixLen, 0);
+	slaxIoDabbrevSuffixLen = (long) suffixlen;
+    }
+}
+
+/*
+ * ESC-.: insert the last token of the most recent multi-token history
+ * entry, skipping single-token entries and the in-progress line's own
+ * placeholder at history index 0.  The token itself is found by
+ * slaxDebugLastToken(), an isocline-agnostic function tested
+ * headlessly via the hidden 'lastarg' command; only the history walk
+ * is isocline-side.
+ */
+static void
+slaxIoKeyLastArg (ic_keyaction_env_t *kenv)
+{
+    long count = ic_history_count();
+    long i;
+
+    for (i = 1; i < count; i += 1) {
+	const char *entry = ic_history_get(i);
+	size_t len;
+	const char *token;
+	char *copy;
+
+	if (entry == NULL)
+	    continue;
+
+	token = slaxDebugLastToken(entry, &len);
+	if (token == NULL)
+	    continue;
+
+	copy = (char *) alloca(len + 1);
+	memcpy(copy, token, len);
+	copy[len] = '\0';
+
+	ic_keyaction_replace(kenv, copy, 0, 0);
+	return;
+    }
+}
+
+/*
+ * CTRL-G: dismiss completions for the word being edited; the
+ * suppress-until-next-word-boundary behavior itself lives in
+ * isocline's keybind/editline code.
+ */
+static void
+slaxIoKeyDismiss (ic_keyaction_env_t *kenv)
+{
+    ic_keyaction_dismiss_completions(kenv);
+}
+
+/*
+ * Bind the "?"/ESC-//ESC-./CTRL-G keys once, alongside the completer,
+ * the first time isocline is used.
+ */
+static void
+slaxIoBindKeys (void)
+{
+    static bool bound;
+
+    if (bound)
+	return;
+
+    bound = true;
+
+    ic_bind_key('?', &slaxIoKeyHelp, NULL);
+    ic_bind_key(IC_KEY_MOD_ALT | '/', &slaxIoKeyDabbrevExpand, NULL);
+    ic_bind_key(IC_KEY_MOD_ALT | '.', &slaxIoKeyLastArg, NULL);
+    ic_bind_key(7, &slaxIoKeyDismiss, NULL);
+}
 #endif /* defined(WITH_ISOCLINE) */
 
 /* Callback functions for input and output */
@@ -298,6 +479,7 @@ slaxIoStdioInputCallback (const char *prompt, unsigned flags UNUSED)
     } else if (!slaxIoNoReadline && !slaxIoNoTty) {
 	char *res;
 
+	slaxIoBindKeys();
 	cp = ic_readline_ex(prompt, slaxIoCompleter, NULL, NULL, NULL);
 	if (cp == NULL)
 	    return NULL;
