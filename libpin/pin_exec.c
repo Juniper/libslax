@@ -436,8 +436,9 @@ pin_op_push_attr (PIN_OP_FUNC_ARGS)
 /*
  * Walk a slash-separated element path from start, returning the node at
  * the end of the path.  Each step descends to the first direct child
- * element with that name; a "." step leaves the current node unchanged.
- * Returns null_atom if any non-trivial step is not found.
+ * element with that name; a "." step leaves the current node unchanged,
+ * and ".." moves to its parent.  Returns null_atom if any non-trivial
+ * step is not found.
  */
 pin_node_id_t
 pin_exec_node_at_path (pin_workspace_t *pwp, pin_node_id_t start,
@@ -451,7 +452,12 @@ pin_exec_node_at_path (pin_workspace_t *pwp, pin_node_id_t start,
         const char *slash = memchr(p, '/', remaining);
         size_t step_len = slash ? (size_t)(slash - p) : remaining;
 
-        if (step_len > 0 && !(step_len == 1 && p[0] == '.')) {
+        if (step_len == 2 && p[0] == '.' && p[1] == '.') {
+            pin_node_t *node = pin_node_addr(pwp, target);
+            if (node == NULL || pin_node_id_is_null(node->pn_parent))
+                return pin_node_id_null_atom();
+            target = node->pn_parent;
+        } else if (step_len > 0 && !(step_len == 1 && p[0] == '.')) {
             char stepbuf[step_len + 1];
             memcpy(stepbuf, p, step_len);
             stepbuf[step_len] = '\0';
@@ -994,6 +1000,34 @@ pin_exec_eval_expr_string (pin_workspace_t *pwp, pin_node_id_t ctx_node,
             char aname[elen];
             memcpy(aname, expr + 1, elen - 1);
             aname[elen - 1] = '\0';
+            pin_name_id_t anid = pin_namepool_atom(pwp, aname, FALSE);
+            if (!pin_name_id_is_null(anid)) {
+                const char *val = pin_get_attrib_string(pwp, nodep, anid);
+                if (val)
+                    snprintf(buf, bufsz, "%s", val);
+            }
+        }
+        return;
+    }
+
+    /* "path/@name": the attribute of the node at path */
+    const char *at = NULL;
+    for (const char *cp = expr + elen; cp > expr; cp--) {
+        if (cp[-1] == '/') {
+            if (cp[0] == '@')
+                at = cp;
+            break;
+        }
+    }
+    if (at != NULL) {
+        pin_node_id_t owner = pin_exec_node_at_path(pwp, ctx_node, expr,
+                                                    (size_t) (at - expr - 1));
+        pin_node_t *nodep = pin_node_addr(pwp, owner);
+        size_t alen = elen - (size_t) (at - expr) - 1;
+        if (nodep && alen > 0) {
+            char aname[alen + 1];
+            memcpy(aname, at + 1, alen);
+            aname[alen] = '\0';
             pin_name_id_t anid = pin_namepool_atom(pwp, aname, FALSE);
             if (!pin_name_id_is_null(anid)) {
                 const char *val = pin_get_attrib_string(pwp, nodep, anid);

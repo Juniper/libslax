@@ -103,6 +103,10 @@ typedef struct pin_body_instr_s {
     pin_name_id_t bi_select;        /* BIA_EMIT_OPEN: attribute string; BIA_COPY_SELECT / BIA_APPLY / BIA_IF: select/test atom */
     pin_name_id_t bi_mode;          /* BIA_APPLY: mode= atom */
     uint32_t bi_filter_idx;         /* BIA_IF: index into prb_if_filters[] */
+    uint32_t bi_eval_idx;           /* BIA_IF in a for-each body, or
+				       BIA_FOR_EACH's select predicate:
+				       index + 1 into prb_eval_progs[],
+				       or 0 */
 } pin_body_instr_t;
 
 /*
@@ -142,6 +146,9 @@ typedef struct pin_body_frame_s {
     pin_node_id_t pbf_match_node;       /* BIA_FOR_EACH: retained matched element itself,
 					    used as the navigation root for a relative
 					    select in Phase 2 (null = none) */
+    pin_node_id_t pbf_match_root;       /* BIA_FOR_EACH: the node holding
+					    pbf_match_node, the navigation root
+					    for an absolute select */
     uint8_t pbf_is_root_match;          /* Set when this frame's rule is the match="/"
 					    root rule: the retained element is the first
 					    document child, not the context node, so

@@ -51,6 +51,7 @@
 #include <libpin/pin_sort.h>
 #include <libpin/pin_output.h>
 #include <libpin/pin_output_store.h>
+#include <libpin/pin_filter.h>
 
 /* Forward declarations */
 static void pin_body_exec_advance(pin_parse_t *parsep);
@@ -1811,7 +1812,10 @@ pin_body_collect_append (pin_node_id_t nid,
 
 /*
  * Collect all terminal nodes reachable from start by walking slash-separated
- * path steps.  Each step descends to ALL direct children with that name.
+ * path steps.  Each step descends to ALL direct children with that name,
+ * or to every child element for "*"; "name[N]" takes only the Nth.  Any
+ * other predicate matches nothing, so pin_compile_select_pred() must
+ * have cut it out.
  * Results are appended to *outp / *cntp / *capp (caller must free *outp).
  */
 static void
@@ -1833,19 +1837,38 @@ pin_body_collect_path (pin_workspace_t *pwp, pin_node_id_t start,
 	return;
     }
 
-    char stepbuf[step_len + 1];
-    memcpy(stepbuf, path, step_len);
-    stepbuf[step_len] = '\0';
+    /* "name[N]" keeps only the Nth match under each parent */
+    unsigned nth = 0;
+    const char *open = memchr(path, '[', step_len);
+    if (open && path[step_len - 1] == ']' && open + 1 < path + step_len - 1) {
+	for (const char *cp = open + 1; cp < path + step_len - 1; cp++) {
+	    if (!isdigit((unsigned char) *cp))
+		return;
+	    nth = nth * 10 + (unsigned) (*cp - '0');
+	}
+	if (nth == 0)
+	    return;
+	step_len = (size_t) (open - path);
+    }
 
-    pin_name_id_t step_name = pin_namepool_atom(pwp, stepbuf, FALSE);
-    if (pin_name_id_is_null(step_name))
-	return;
+    bool any = (step_len == 1 && path[0] == '*');
+    pin_name_id_t step_name = pin_name_id_null_atom();
+    if (!any) {
+	char stepbuf[step_len + 1];
+	memcpy(stepbuf, path, step_len);
+	stepbuf[step_len] = '\0';
+
+	step_name = pin_namepool_atom(pwp, stepbuf, FALSE);
+	if (pin_name_id_is_null(step_name))
+	    return;
+    }
 
     pin_node_t *node = pin_node_addr(pwp, start);
     if (node == NULL)
 	return;
 
     pin_depth_t target_depth = node->pn_depth + 1;
+    unsigned seen = 0;
     for (pin_node_id_t cid = pin_node_child(node);
 	    !pin_node_id_is_null(cid); ) {
 	pin_node_t *child = pin_node_addr(pwp, cid);
@@ -1853,7 +1876,12 @@ pin_body_collect_path (pin_workspace_t *pwp, pin_node_id_t start,
 	    break;
 	if (child->pn_depth == target_depth
 		&& child->pn_type == PIN_TYPE_ELT
-		&& pin_name_id_equal(child->pn_name, step_name)) {
+		&& (any || pin_name_id_equal(child->pn_name, step_name))) {
+	    seen += 1;
+	    if (nth != 0 && seen != nth) {
+		cid = child->pn_next;
+		continue;
+	    }
 	    if (last_step)
 		pin_body_collect_append(cid, outp, cntp, capp);
 	    else
@@ -2026,6 +2054,64 @@ pin_body_avt_expand (pin_parse_t *parsep, pin_body_frame_t *bfp,
     }
     buf[pos] = '\0';
     return strdup(buf);
+}
+
+/*
+ * Run a for-each body's compiled test (prb_eval_progs[idx]) against
+ * ctx_node, an item in the retained tree.  Truth follows xsl:if: a
+ * boolean is itself, and a string or node set is true when non-empty.
+ * The body's variables (bfp's, or none when bfp is NULL) are lent to
+ * the program as an exec state's bindings, the only part of the state
+ * that variable lookup reads.
+ */
+static int
+pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
+		    uint32_t idx, pin_node_id_t ctx_node)
+{
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    if (idx >= rb->prb_eval_prog_count || rb->prb_eval_xfp == NULL
+	    || pin_node_id_is_null(ctx_node))
+	return 0;
+
+    int nvars = bfp ? bfp->pbf_var_count : 0;
+    pin_var_binding_t vars[nvars > 0 ? nvars : 1];
+    for (int i = 0; i < nvars; i++) {
+	vars[i].pvb_name = pin_name_id_atom_of(bfp->pbf_var_names[i]);
+	vars[i].pvb_value
+	    = pin_value_string(pin_name_id_atom_of(bfp->pbf_var_values[i]));
+    }
+
+    pin_exec_state_t vstate;
+    memset(&vstate, 0, sizeof(vstate));
+    vstate.pes_vars = vars;
+    vstate.pes_var_count = (uint32_t) nvars;
+
+    xo_filter_t *xfp = rb->prb_eval_xfp;
+    pin_filter_set_cur_node(xfp, ctx_node);
+    pin_filter_set_esp(xfp, &vstate);
+
+    uint32_t ns_count = 0;
+    const pin_ns_map_t *ns_bindings = pin_rulebook_eval_prog_ns(rb, idx,
+								   &ns_count);
+    pin_filter_set_compile_ns(xfp, ns_bindings, ns_count);
+
+    struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
+    int is_boolean = 0, bool_value = 0, is_missing = 0;
+    char *str = xo_eval_prog_run_simple(NULL, xfp, NULL, xdp,
+					 rb->prb_eval_progs[idx], &is_boolean,
+					 &bool_value, &is_missing);
+
+    int truth;
+    if (is_missing)
+	truth = 0;
+    else if (is_boolean)
+	truth = bool_value;
+    else
+	truth = (str != NULL && str[0] != '\0');
+    free(str);
+    pin_filter_set_esp(xfp, NULL);
+
+    return truth;
 }
 
 /*
@@ -2274,7 +2360,10 @@ pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
 	    break;
 	}
 	case BIA_IF: {
-	    int truth = pin_body_eval_if_ctx(parsep, instr, bfp->pbf_ctx_node);
+	    int truth = (instr->bi_eval_idx != 0)
+		? pin_body_eval_test(parsep, bfp, instr->bi_eval_idx - 1,
+				     bfp->pbf_ctx_node)
+		: pin_body_eval_if_ctx(parsep, instr, bfp->pbf_ctx_node);
 	    if (!truth)
 		pc = instr->bi_else;
 	    break;
@@ -2778,12 +2867,18 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		bfp->pbf_mode = PBMODE_FOR_EACH_STREAM;
 		return;		/* Pause; resume on matched element CLOSE */
 	    }
-	    if (bfp->pbf_depth_counter == 0) {
+	    /*
+	     * A later for-each in the same body finds the matched element
+	     * already retained and closed, so it runs Phase 2 at once.
+	     */
+	    if (bfp->pbf_depth_counter == 0
+		    && pin_node_id_is_null(bfp->pbf_match_node)) {
 		/* Save the current output node so Phase 2 can use it as the
 		 * navigation root for absolute paths.  For /authors/author the
 		 * retained <authors> is a child of this node, so navigating
 		 * authors/author from here finds the right nodes. */
-		bfp->pbf_ctx_node = pin_insert_input_frame(pip)->ps_atom;
+		bfp->pbf_match_root = pin_insert_input_frame(pip)->ps_atom;
+		bfp->pbf_ctx_node = bfp->pbf_match_root;
 		const char *match_str = pin_parse_namepool_string(parsep,
 							      bfp->pbf_match_name);
 		if (match_str) {
@@ -2803,7 +2898,7 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    bfp->pbf_depth_counter = 0;
 	    /* fe_root: the output node that contains the retained matched element;
 	     * used as the navigation root for absolute paths in Phase 2. */
-	    pin_node_id_t fe_root = bfp->pbf_ctx_node;
+	    pin_node_id_t fe_root = bfp->pbf_match_root;
 
 	    /*
 	     * Collect all nodes matching the select path, sort them, then
@@ -2844,6 +2939,16 @@ pin_body_exec_advance (pin_parse_t *parsep)
 	    if (path[0] != '\0')
 		pin_body_collect_path(pwp, start, path, strlen(path),
 				      &nodes, &node_count, &node_size);
+
+	    if (instr->bi_eval_idx != 0) {
+		int kept = 0;
+		for (int i = 0; i < node_count; i++) {
+		    if (pin_body_eval_test(parsep, bfp, instr->bi_eval_idx - 1,
+					   nodes[i]))
+			nodes[kept++] = nodes[i];
+		}
+		node_count = kept;
+	    }
 
 	    /* Sort if a sort spec is present */
 	    const char *sort_spec = !pin_name_id_is_null(instr->bi_text)

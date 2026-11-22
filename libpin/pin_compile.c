@@ -378,6 +378,77 @@ pin_compile_sort_spec (pin_rulebook_t *rb, xmlNodePtr for_each,
 }
 
 /*
+ * Compile an xsl:if or xsl:when test in a for-each body as a full XPath
+ * program.  The body runs against a retained item, so the test can read
+ * its children, which the test's xo_filter (name and attributes only)
+ * can't.  Returns the program's index + 1, or 0 if the test doesn't
+ * compile, leaving the filter to decide.
+ */
+static uint32_t
+pin_compile_body_test (pin_rulebook_t *rb, const char *test)
+{
+    xo_filter_t *xfp = pin_rulebook_get_eval_filter(rb);
+    if (xfp == NULL)
+	return 0;
+
+    ssize_t root = xo_filter_parse_expr(NULL, xfp, test);
+    if (root < 0)
+	return 0;
+
+    struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
+    pin_filter_set_compile_ns(xfp, NULL, 0);
+    pin_filter_clear_compile_error();
+    xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
+    if (prog == NULL)
+	return 0;
+
+    uint32_t idx = pin_rulebook_eval_prog_add(rb, prog, NULL, 0);
+    if (idx == UINT32_MAX) {
+	xo_eval_prog_destroy(prog);
+	return 0;
+    }
+
+    return idx + 1;
+}
+
+/*
+ * If sel's last step ends in one predicate, as in "a/b[c > 1]", compile
+ * the predicate with pin_compile_body_test(), cut it from sel, and return
+ * the program's index + 1.  A predicate that is a number or uses
+ * position() or last() depends on the item's position, which a test of
+ * one item can't see, so it is left alone, and 0 is returned.
+ */
+static uint32_t
+pin_compile_select_pred (pin_rulebook_t *rb, char *sel)
+{
+    size_t len = strlen(sel);
+    if (len < 3 || sel[len - 1] != ']')
+	return 0;
+
+    char *open = strchr(sel, '[');
+    if (open == NULL || open == sel || strchr(open, '/') != NULL
+	    || strchr(open + 1, '[') != NULL)
+	return 0;
+
+    char *pred = open + 1;
+    sel[len - 1] = '\0';
+
+    uint32_t idx = 0;
+    if (!isdigit((unsigned char) *pred) && strstr(pred, "position(") == NULL
+	    && strstr(pred, "last(") == NULL)
+	idx = pin_compile_body_test(rb, pred);
+
+    if (idx != 0)
+	*open = '\0';
+    else
+	sel[len - 1] = ']';
+
+    return idx;
+}
+
+/*
  * Compile the children of body_node into a linked list of body instructions.
  * *nextp is a pointer-to-pointer cursor that always points at the id field
  * where the next instruction's id should be written; recursive calls share
@@ -498,25 +569,31 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		char xpath_buf[1024];
 		snprintf(xpath_buf, sizeof(xpath_buf),
 			 "*[%s]", (const char *) test);
+		uint32_t eval_idx = in_foreach
+		    ? pin_compile_body_test(rb, (const char *) test) : 0;
 		xmlFree(test);
 
-		xo_filter_t *cond_filter = xo_filter_create_standalone();
-		if (cond_filter == NULL)
-		    return;
-		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
-		    xo_filter_destroy_standalone(cond_filter);
-		    return;
-		}
-		uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
-		if (fidx == UINT32_MAX) {
-		    xo_filter_destroy_standalone(cond_filter);
-		    return;
+		uint32_t fidx = 0;
+		if (eval_idx == 0) {
+		    xo_filter_t *cond_filter = xo_filter_create_standalone();
+		    if (cond_filter == NULL)
+			return;
+		    if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
+			xo_filter_destroy_standalone(cond_filter);
+			return;
+		    }
+		    fidx = pin_rulebook_if_filter_add(rb, cond_filter);
+		    if (fidx == UINT32_MAX) {
+			xo_filter_destroy_standalone(cond_filter);
+			return;
+		    }
 		}
 		bip_if = pin_body_instr_new(rb, nextp, &bid_if);
 		if (bip_if == NULL)
 		    return;
 		bip_if->bi_type = BIA_IF;
 		bip_if->bi_filter_idx = fidx;
+		bip_if->bi_eval_idx = eval_idx;
 	    }
 
 	    /* Compile the true-body; bi_next of bip_if is filled in here */
@@ -596,24 +673,30 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		    return;
 		}
 		snprintf(xpath_buf, tlen + 4, "*[%s]", (const char *) test);
+		uint32_t eval_idx = in_foreach
+		    ? pin_compile_body_test(rb, (const char *) test) : 0;
 		xmlFree(test);
 
-		xo_filter_t *cond_filter = xo_filter_create_standalone();
-		if (cond_filter == NULL) {
-		    xo_free(xpath_buf);
-		    return;
-		}
-		if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
-		    xo_filter_destroy_standalone(cond_filter);
-		    xo_free(xpath_buf);
-		    return;
+		uint32_t fidx = 0;
+		if (eval_idx == 0) {
+		    xo_filter_t *cond_filter = xo_filter_create_standalone();
+		    if (cond_filter == NULL) {
+			xo_free(xpath_buf);
+			return;
+		    }
+		    if (xo_filter_walk_add(NULL, cond_filter, xpath_buf) < 0) {
+			xo_filter_destroy_standalone(cond_filter);
+			xo_free(xpath_buf);
+			return;
+		    }
+		    fidx = pin_rulebook_if_filter_add(rb, cond_filter);
+		    if (fidx == UINT32_MAX) {
+			xo_filter_destroy_standalone(cond_filter);
+			xo_free(xpath_buf);
+			return;
+		    }
 		}
 		xo_free(xpath_buf);
-		uint32_t fidx = pin_rulebook_if_filter_add(rb, cond_filter);
-		if (fidx == UINT32_MAX) {
-		    xo_filter_destroy_standalone(cond_filter);
-		    return;
-		}
 
 		pin_body_instr_id_t bid_if;
 		pin_body_instr_t *bip_if =
@@ -622,6 +705,7 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 		    return;
 		bip_if->bi_type = BIA_IF;
 		bip_if->bi_filter_idx = fidx;
+		bip_if->bi_eval_idx = eval_idx;
 
 		/* Backpatch previous BIA_IF's bi_else to chain to this one */
 		if (!pin_body_instr_id_is_null(bid_last_if)) {
@@ -759,6 +843,20 @@ pin_compile_body_r (xmlNodePtr body_node, pin_rulebook_t *rb,
 	    bip_fe->bi_type = BIA_FOR_EACH;
 	    bip_fe->bi_select = pin_namepool_atom(rb->prb_workspace,
 						   (const char *) fsel, TRUE);
+
+	    /*
+	     * A predicate on the last step becomes a test that each
+	     * collected item must pass, leaving a plain path to collect.
+	     */
+	    if (child != rb->prb_stream_fe) {
+		uint32_t pred_idx = pin_compile_select_pred(rb, (char *) fsel);
+		if (pred_idx != 0) {
+		    bip_fe->bi_select = pin_namepool_atom(rb->prb_workspace,
+							   (const char *) fsel,
+							   TRUE);
+		    bip_fe->bi_eval_idx = pred_idx;
+		}
+	    }
 
 	    /*
 	     * The template's one reader, streaming as items arrive: its
