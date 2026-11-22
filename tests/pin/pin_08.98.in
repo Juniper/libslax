@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+# quiet dump clean xml pin_08.98.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <xsl:template match="top">
+    <out>
+      <xsl:for-each select="g/t[last()]">
+        <l>
+          <xsl:value-of select="."/>
+        </l>
+      </xsl:for-each>
+      <xsl:for-each select="g/t[position() &gt; 1]">
+        <xsl:sort select="." order="descending"/>
+        <p>
+          <xsl:value-of select="."/>
+        </p>
+      </xsl:for-each>
+      <xsl:for-each select="g/*[1]">
+        <xsl:sort select="."/>
+        <f>
+          <xsl:value-of select="."/>
+        </f>
+      </xsl:for-each>
+      <xsl:for-each select="g/t[position() &lt; 3 and . != &quot;a1&quot;]">
+        <xsl:sort select="."/>
+        <m>
+          <xsl:value-of select="."/>
+        </m>
+      </xsl:for-each>
+      <xsl:for-each select="g/t">
+        <xsl:sort select="." order="descending"/>
+        <xsl:if test="position() &gt; 1 and . != &quot;c1&quot;">
+          <q>
+            <xsl:value-of select="."/>
+          </q>
+        </xsl:if>
+      </xsl:for-each>
+      <xsl:for-each select="g/t[last() - 1]">
+        <xsl:sort select="."/>
+        <n>
+          <xsl:value-of select="."/>
+        </n>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>
