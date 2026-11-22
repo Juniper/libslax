@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<top>
+  <a>t1<b><n>1</n></b><z><b><n>no</n></b></z><b><n>2</n><b><n>no</n></b></b></a>
+  <z><b><n>3</n></b></z>
+  <a/>
+  <a><b/><c><n>no</n></c>tail<b><n>4</n></b></a>
+  <b><n>no</n></b>
+</top>

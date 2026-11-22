@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<top>
+  <before><name>no</name><some-field>99</some-field></before>
+  <things>
+    <thing><name>a</name><junk>j</junk><some-field>10</some-field></thing>
+    <other><name>b</name><some-field>60</some-field><more><deep>d</deep></more></other>
+    text
+    <thing><name>c</name><some-field>51</some-field></thing>
+    <thing/>
+    <thing><name>e</name><some-field>99</some-field></thing>
+  </things>
+  <after><name>no</name><some-field>99</some-field></after>
+</top>

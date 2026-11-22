@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+# quiet dump clean xml pin_08.95.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    A for-each over a path of child steps streams: each item is run
+    as it closes, with its var dropped after it.  Elements off the
+    path (before, after) are discarded.  Matches slaxproc.
+    Expected (one line):
+      <out><best>b</best><best>c</best><best>e</best></out>
+  -->
+  <xsl:template match="top">
+    <out>
+      <xsl:for-each select="things/*">
+        <xsl:variable name="x" select="some-field"/>
+        <xsl:if test="$x &gt; 50">
+          <best>
+            <xsl:value-of select="name"/>
+          </best>
+        </xsl:if>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

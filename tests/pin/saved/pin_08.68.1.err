@@ -72,7 +72,7 @@ pin_insert_text: [
       ] 0 / 772 (depth 4)
 open tag [item] [id="a"]
 pin_insert_open: [item] 269 / 0 (depth 4)
-pin_insert_attribs_extract: [id] 266 / 771 (depth 5)
+pin_insert_attribs_extract: [id] 264 / 771 (depth 5)
 text [Alpha] (6)
 pin_insert_text: [Alpha] 0 / 770 (depth 5)
 close tag [item] []
@@ -83,7 +83,7 @@ pin_insert_text: [
       ] 0 / 769 (depth 4)
 open tag [item] [id="b"]
 pin_insert_open: [item] 269 / 0 (depth 4)
-pin_insert_attribs_extract: [id] 266 / 768 (depth 5)
+pin_insert_attribs_extract: [id] 264 / 768 (depth 5)
 text [Beta] (6)
 pin_insert_text: [Beta] 0 / 775 (depth 5)
 close tag [item] []

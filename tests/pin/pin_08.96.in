@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+# quiet dump clean xml pin_08.96.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    A streaming for-each over "*/b": a "b" is an item only as a
+    grandchild of the matched element under an element that matched
+    the first step.  Deeper or shallower "b"s, and text outside the
+    items, are dropped.  Matches slaxproc.
+    Expected (one line):
+      <out><i>1</i><i>2</i><i>3</i><i/><i>4</i></out>
+  -->
+  <xsl:template match="top">
+    <out>
+      <xsl:for-each select="*/b">
+        <i>
+          <xsl:value-of select="n"/>
+        </i>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>
