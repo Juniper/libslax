@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+# quiet dump clean xml pin_08.97.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    For-each loops that don't stream run over the retained element.
+    Their if tests read the item's children and the loop's variables,
+    the body reads an ancestor, and a select can use "*", a predicate
+    on its last step, or "[N]".  Matches slaxproc.
+    Expected (one line):
+      <out><lo>e</lo><hi>d</hi><mid k="y">c</mid><lo>a</lo><low>a</low><low>e</low><low>b</low><second>c</second></out>
+  -->
+  <xsl:template match="top">
+    <out>
+      <xsl:for-each select="things/thing">
+        <xsl:sort select="name" order="descending"/>
+        <xsl:variable name="x" select="some-field"/>
+        <xsl:choose>
+          <xsl:when test="$x &gt; 70">
+            <hi>
+              <xsl:value-of select="name"/>
+            </hi>
+          </xsl:when>
+          <xsl:when test="some-field &gt; 50 and name != &quot;q&quot;">
+            <mid k="{../../@k}">
+              <xsl:value-of select="name"/>
+            </mid>
+          </xsl:when>
+          <xsl:otherwise>
+            <lo>
+              <xsl:value-of select="name"/>
+            </lo>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:for-each>
+      <xsl:for-each select="things/*[some-field &lt; 50]">
+        <xsl:sort select="some-field"/>
+        <low>
+          <xsl:value-of select="name"/>
+        </low>
+      </xsl:for-each>
+      <xsl:for-each select="things/thing[2]">
+        <xsl:sort select="name"/>
+        <second>
+          <xsl:value-of select="name"/>
+        </second>
+      </xsl:for-each>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

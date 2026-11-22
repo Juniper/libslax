@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<top k="y">
+  <things>
+    <thing><name>a</name><junk>j</junk><some-field>10</some-field></thing>
+    <other><name>b</name><some-field>6</some-field></other>
+    <thing><name>c</name><some-field>60</some-field><more><deep>d</deep></more></thing>
+    <thing><name>d</name><some-field>99</some-field></thing>
+    <thing><name>e</name><some-field>3</some-field></thing>
+  </things>
+</top>
