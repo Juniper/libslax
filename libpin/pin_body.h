@@ -156,7 +156,9 @@ typedef struct pin_body_frame_s {
 					    the mode ends */
     uint32_t pbf_stream_ops;            /* PBMODE_FOR_EACH_STREAM/ITEM: atom of the
 					    op sequence run for each item */
-    pin_name_id_t pbf_stream_name;      /* PBMODE_FOR_EACH_STREAM: element name selected */
+    pin_name_id_t pbf_stream_select;    /* PBMODE_FOR_EACH_STREAM: the select, a path
+					    of child steps */
+    pin_depth_t pbf_stream_steps;       /* PBMODE_FOR_EACH_STREAM: steps in the select */
     char *pbf_attribs_owned;            /* Heap copy of pbf_match_attribs, made when the
 					    body outlives the open event that supplied
 					    them (a streaming for-each); freed with the

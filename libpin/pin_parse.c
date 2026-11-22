@@ -1331,6 +1331,48 @@ pin_insert_open_pass (pin_parse_t *parsep, pin_name_id_t name_id,
 }
 
 /*
+ * Return the step of a streaming for-each's select that an element
+ * named "name", opening now, matches: 1 for a child of the matched
+ * element, 2 for a grandchild, and so on, or 0 if it isn't on the
+ * path.  Below the first step, its parent must have matched the step
+ * before; those are opened to pass their content through, and every
+ * other element there is discarded.
+ */
+static unsigned
+pin_body_stream_step (pin_parse_t *parsep, pin_body_frame_t *bfp,
+		      const char *name)
+{
+    pin_insert_t *pip = parsep->pp_insert;
+
+    if (pip->pin_depth < bfp->pbf_copy_depth)
+	return 0;
+
+    unsigned step = pip->pin_depth - bfp->pbf_copy_depth + 1;
+    if (step > bfp->pbf_stream_steps)
+	return 0;
+    if (step > 1 && pin_insert_input_frame(pip)->ps_action != PIA_NONE)
+	return 0;
+
+    const char *cp = pin_parse_namepool_string(parsep,
+					       bfp->pbf_stream_select);
+    for (unsigned i = 1; cp && i < step; i++) {
+	cp = strchr(cp, '/');
+	if (cp)
+	    cp += 1;
+    }
+    if (cp == NULL)
+	return 0;
+
+    size_t len = strcspn(cp, "/");
+    if (len == 1 && *cp == '*')
+	return step;
+    if (strlen(name) == len && strncmp(cp, name, len) == 0)
+	return step;
+
+    return 0;
+}
+
+/*
  * A body mode that reads the matched element's content without
  * output for the element itself (apply-templates, value-of, a
  * streaming for-each) opens it in the store when the body is running
@@ -1614,7 +1656,8 @@ pin_insert_close (pin_parse_t *parsep, const char *prefix UNUSED, const char *na
 		}
 	    }
 	} else if (bfp->pbf_mode == PBMODE_FOR_EACH_ITEM
-		&& pip->pin_depth == bfp->pbf_copy_depth) {
+		&& pip->pin_depth
+		   == bfp->pbf_copy_depth + bfp->pbf_stream_steps - 1) {
 	    /*
 	     * A streaming for-each item has closed and its retained
 	     * subtree is complete: run the loop body's ops against it, as
@@ -2716,7 +2759,14 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		bfp->pbf_position = 0;
 		bfp->pbf_last = 0;
 		bfp->pbf_stream_ops = instr->bi_filter_idx;
-		bfp->pbf_stream_name = instr->bi_select;
+		bfp->pbf_stream_select = instr->bi_select;
+		bfp->pbf_stream_steps = 1;
+		const char *ssel = pin_parse_namepool_string(parsep,
+							     instr->bi_select);
+		for (const char *cp = ssel; cp && *cp; cp++) {
+		    if (*cp == '/')
+			bfp->pbf_stream_steps += 1;
+		}
 		/*
 		 * Instructions after the loop run at the matched element's
 		 * close, when the parser's attribute string is long gone.
@@ -3509,10 +3559,12 @@ pin_parse (pin_parse_t *parsep)
 
 	    /*
 	     * PBMODE_FOR_EACH_STREAM bypass: a streaming for-each is reading
-	     * the matched element's children.  A direct child with the
-	     * selected name is retained (transiently) as the next item, and
-	     * PBMODE_FOR_EACH_ITEM saves its descendants.  Anything else is
-	     * discarded.
+	     * the matched element's content.  An element that matches the
+	     * select's last step is retained (transiently) as the next
+	     * item, and PBMODE_FOR_EACH_ITEM saves its descendants.  One
+	     * that matches an earlier step passes its content through, so
+	     * the loop's output still goes to the matched element's place.
+	     * Anything else is discarded.
 	     */
 	    {
 		pin_body_exec_t *body = &pip->pin_body;
@@ -3529,13 +3581,16 @@ pin_parse (pin_parse_t *parsep)
 		    }
 
 		    bool keep = (sbfp->pbf_mode == PBMODE_FOR_EACH_ITEM);
-		    if (!keep && pip->pin_depth == sbfp->pbf_copy_depth
-			    && pin_name_id_equal(name_id, sbfp->pbf_stream_name)) {
-			keep = true;
+		    unsigned step = keep ? 0
+			: pin_body_stream_step(parsep, sbfp, localp);
+		    if (step == sbfp->pbf_stream_steps) {
 			pin_insert_open_flags(parsep, name_id, data, localp,
 					      rest, PIA_SAVE_ATTRIB,
 					      PIN_IOF_RETAIN);
 			sbfp->pbf_mode = PBMODE_FOR_EACH_ITEM;
+		    } else if (step != 0) {
+			pin_insert_open_pass(parsep, name_id, data, localp,
+					     rest);
 		    } else if (keep) {
 			pin_rule_t save_rule;
 			bzero(&save_rule, sizeof(save_rule));

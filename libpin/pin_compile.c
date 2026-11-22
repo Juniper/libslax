@@ -1567,14 +1567,44 @@ pin_find_reader (xmlNodePtr node)
 }
 
 /*
+ * Return true if sel is a path of child steps, each an element name
+ * or "*", such as "a", "a/b" or "a/b/c".  A streaming for-each can follow
+ * such a path down from the matched element as the input arrives.
+ */
+static bool
+pin_select_is_child_steps (const char *sel)
+{
+    const char *cp = sel;
+
+    for (;;) {
+	if (*cp == '*') {
+	    cp += 1;
+	} else {
+	    if (!isalpha((unsigned char) *cp) && *cp != '_')
+		return false;
+	    while (isalnum((unsigned char) *cp) || *cp == '_'
+		    || *cp == '-' || *cp == '.')
+		cp += 1;
+	}
+
+	if (*cp == '\0')
+	    return true;
+	if (*cp != '/')
+	    return false;
+	cp += 1;
+    }
+}
+
+/*
  * R5 "stream where we can": if the match template tmpl's only reader
  * of the context element's children is an unsorted xsl:for-each over
- * one child name, return that for-each.  It can then run as each
- * selected child arrives (PBMODE_FOR_EACH_STREAM), keeping one item
- * at a time rather than the whole element.  This needs:
+ * a path of child steps, return that for-each.  It can then run as
+ * each selected element arrives (PBMODE_FOR_EACH_STREAM), keeping one
+ * item at a time rather than the whole element.  This needs:
  *
  *   - no top-level call-template and exactly one reader;
- *   - select is a bare element name, with no xsl:sort;
+ *   - select is a path of child steps (pin_select_is_child_steps()),
+ *     with no xsl:sort;
  *   - the loop body looks only inside the item (no "..", absolute
  *     paths, last(), nested readers, or calls);
  *   - the rest of the template reads only the context element's
@@ -1611,15 +1641,9 @@ pin_template_stream_foreach (xmlNodePtr tmpl)
     xmlChar *sel = xmlGetProp(fe, (const xmlChar *) "select");
     if (sel == NULL)
 	return NULL;
-    const char *s = (const char *) sel;
-    bool name_ok = (isalpha((unsigned char) s[0]) || s[0] == '_');
-    for (const char *cp = s; name_ok && *cp; cp++) {
-	if (!isalnum((unsigned char) *cp) && *cp != '_' && *cp != '-'
-		&& *cp != '.')
-	    name_ok = false;
-    }
+    bool steps_ok = pin_select_is_child_steps((const char *) sel);
     xmlFree(sel);
-    if (!name_ok)
+    if (!steps_ok)
 	return NULL;
 
     if (!pin_subtree_item_only(fe))
@@ -2895,8 +2919,8 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	     * multi-step path is only taken when poc_multi_step is set: in
 	     * a named template's body, or in a match template that buffers
 	     * anyway (see pin_count_readers()).  Otherwise a match template
-	     * falls back to BIA_ for it, whose streaming for-each
-	     * (pin_compile_foreach) needs no retained subtree.
+	     * falls back to BIA_ for it, whose BIA_FOR_EACH streams the path
+	     * when it can (see pin_template_stream_foreach()).
 	     */
 	    if (pin_classify_select(s) != SELK_DOWN
 		    || strpbrk(s, ".:") != NULL
