@@ -1,0 +1,28 @@
+Type 'help' for help
+(sdb) inquote abc
+false
+(sdb) inquote abc 'de
+true
+(sdb) inquote abc "de"
+false
+(sdb) inquote path[@x='a'] and
+false
+(sdb) inquote path[@x='a
+true
+(sdb) dabbrev pr previous print thing
+previous
+(sdb) dabbrev pr print exactly
+print
+(sdb) dabbrev xyz foo bar
+no match
+(sdb) dabbrev pr pr foo
+no match
+(sdb) lastarg print foo
+foo
+(sdb) lastarg singleword
+none
+(sdb) lastarg a b c
+c
+(sdb) lastarg solo
+none
+(sdb) quit

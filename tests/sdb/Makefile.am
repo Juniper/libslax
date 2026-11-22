@@ -10,6 +10,16 @@
 
 TEST_CASES := $(shell cd ${srcdir} ; echo *.slax )
 
+# keyaction.slax exercises sdb's isocline-only "?"/ESC-//ESC-. key
+# bindings (via the hidden inquote/dabbrev/lastarg commands); skip it
+# when built without isocline.
+if WITH_ISOCLINE
+else
+EXCLUDE_CASES = keyaction.slax
+endif
+
+RUN_CASES = $(filter-out ${EXCLUDE_CASES},${TEST_CASES})
+
 INCLUDE_FILES = \
     included.slax \
     one.slax \
@@ -30,7 +40,7 @@ EXTRA_DIST = \
 
 SLAXPROC = ${top_builddir}/slaxproc/slaxproc
 S2O = | ${SED} '1,/@@/d'
-SDB = ${SLAXPROC} --debug --no-readline --no-tty --no-randomize --echo-input
+SDB = ${SLAXPROC} --debug --no-readline --no-tty --no-randomize --echo-input --allow-hidden
 
 # Each .cmd file issues its own explicit "run" command (after any "break"
 # setup lines), the same way a .cmd file would type it at the "(sdb)"
@@ -111,7 +121,7 @@ TEST_ONE = \
 
 tests-run: ${SLAXPROC}
 	@${MKDIR} -p out
-	-@${DEB} (for test in ${TEST_CASES} ; do \
+	-@${DEB} (for test in ${RUN_CASES} ; do \
 	    echo "... $$test ..."; \
 	    ${TEST_ONE}; \
 	    true; \
@@ -121,7 +131,7 @@ one:
 	-@(test=${TEST_CASE}; ${TEST_ONE} ; true)
 
 accept:
-	-@(for test in ${TEST_CASES} ; do \
+	-@(for test in ${RUN_CASES} ; do \
 	    base=`${BASENAME} $$test .slax` ; \
 	    ${CP} out/$$base.out ${srcdir}/saved/$$base.out ; \
 	    ${CP} out/$$base.err ${srcdir}/saved/$$base.err ; \

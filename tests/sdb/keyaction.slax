@@ -1,0 +1,11 @@
+version 1.0;
+
+match / {
+    var $start = 1;
+    call first($n = $start);
+}
+
+template first ($n) {
+    var $label = "first";
+    <level> $n;
+}
