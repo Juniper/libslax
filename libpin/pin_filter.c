@@ -68,6 +68,9 @@ struct xo_filter_data_s {
     pin_exec_state_t *xfd_esp;      /* current exec state, for xfdo_variable_of */
     const pin_ns_map_t *xfd_compile_ns; /* in-scope prefix/uri bindings at compile site */
     size_t xfd_compile_ns_count;    /* number of entries in xfd_compile_ns */
+    uint32_t xfd_position;          /* position() of the item under test (0 = none) */
+    uint32_t xfd_last;              /* last() of the item under test */
+    int xfd_compile_position;       /* position() and last() may be compiled */
 };
 
 /*
@@ -552,6 +555,28 @@ pin_split_qname (const char *name, char *prefix, size_t prefix_max,
  * pdo_resolve_prefix -- a known, flagged gap, not an oversight.
  */
 /*
+ * position() and last(), for the buffered for-each, which sets them per
+ * item with pin_filter_set_position().
+ */
+static xo_eval_ext_value_t
+pin_filter_fn_position (xo_filter_data_t *dp, int argc UNUSED,
+			const char **argv UNUSED)
+{
+    xo_eval_ext_value_t rv = { .xee_type = XO_EVAL_EXT_NUMBER };
+    rv.xee_num = dp->xfd_position;
+    return rv;
+}
+
+static xo_eval_ext_value_t
+pin_filter_fn_last (xo_filter_data_t *dp, int argc UNUSED,
+		    const char **argv UNUSED)
+{
+    xo_eval_ext_value_t rv = { .xee_type = XO_EVAL_EXT_NUMBER };
+    rv.xee_num = dp->xfd_last;
+    return rv;
+}
+
+/*
  * Name/desc/arghelp of the most recent successful pdo_find_function
  * resolution, stashed here because pin_filter_find_function's own
  * signature is fixed by xo_filter.h's xfdo_find_function vtable member
@@ -595,6 +620,25 @@ pin_filter_find_function (xo_filter_data_t *dp, const char *name,
 			   int *nargsp, int *min_argsp)
 {
     char prefix[64], local[64], uri[256];
+
+    /*
+     * Op dispatch has no position to give, so these compile only for
+     * the buffered for-each, and run only while it has set one.
+     */
+    if (dp != NULL && (dp->xfd_compile_position || dp->xfd_position != 0)) {
+	xo_eval_ext_fn_t fn = NULL;
+	if (strcmp(name, "position") == 0)
+	    fn = pin_filter_fn_position;
+	else if (strcmp(name, "last") == 0)
+	    fn = pin_filter_fn_last;
+
+	if (fn != NULL) {
+	    *nargsp = 0;
+	    *min_argsp = 0;
+	    pin_filter_last_func_set = 0;
+	    return fn;
+	}
+    }
 
     if (!pin_split_qname(name, prefix, sizeof(prefix), local, sizeof(local)))
 	return NULL;			/* no colon; not ours */
@@ -785,6 +829,31 @@ pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp)
     xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
     if (dp)
 	dp->xfd_esp = esp;
+}
+
+/*
+ * Set the position() and last() of the item under test; a position of
+ * 0 means none.
+ */
+void
+pin_filter_set_position (xo_filter_t *xfp, uint32_t position, uint32_t last)
+{
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    if (dp) {
+	dp->xfd_position = position;
+	dp->xfd_last = last;
+    }
+}
+
+/*
+ * Allow or disallow compiling position() and last()
+ */
+void
+pin_filter_set_compile_position (xo_filter_t *xfp, int allowed)
+{
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    if (dp)
+	dp->xfd_compile_position = allowed;
 }
 
 /*

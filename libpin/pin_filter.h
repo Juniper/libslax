@@ -96,6 +96,18 @@ void
 pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp);
 
 /*
+ * Set position() and last() for the item under test (position 0 =
+ * none).  These functions compile only while allowed, which the
+ * buffered for-each does for its own tests; op dispatch has no
+ * position to give them.
+ */
+void
+pin_filter_set_position (xo_filter_t *xfp, uint32_t position, uint32_t last);
+
+void
+pin_filter_set_compile_position (xo_filter_t *xfp, int allowed);
+
+/*
  * Record the in-scope prefix/uri bindings (the compiler's namespace
  * stack, innermost last) that an XPath expression is being compiled
  * "at", so that xfdo_find_function can resolve a namespace prefix

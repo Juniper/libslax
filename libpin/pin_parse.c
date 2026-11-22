@@ -2066,7 +2066,8 @@ pin_body_avt_expand (pin_parse_t *parsep, pin_body_frame_t *bfp,
  */
 static int
 pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
-		    uint32_t idx, pin_node_id_t ctx_node)
+		    uint32_t idx, pin_node_id_t ctx_node, uint32_t position,
+		    uint32_t last)
 {
     pin_rulebook_t *rb = parsep->pp_rulebook;
     if (idx >= rb->prb_eval_prog_count || rb->prb_eval_xfp == NULL
@@ -2089,6 +2090,7 @@ pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
     xo_filter_t *xfp = rb->prb_eval_xfp;
     pin_filter_set_cur_node(xfp, ctx_node);
     pin_filter_set_esp(xfp, &vstate);
+    pin_filter_set_position(xfp, position, last);
 
     uint32_t ns_count = 0;
     const pin_ns_map_t *ns_bindings = pin_rulebook_eval_prog_ns(rb, idx,
@@ -2110,6 +2112,7 @@ pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
 	truth = (str != NULL && str[0] != '\0');
     free(str);
     pin_filter_set_esp(xfp, NULL);
+    pin_filter_set_position(xfp, 0, 0);
 
     return truth;
 }
@@ -2362,7 +2365,8 @@ pin_body_foreach_body (pin_parse_t *parsep, pin_body_instr_id_t head,
 	case BIA_IF: {
 	    int truth = (instr->bi_eval_idx != 0)
 		? pin_body_eval_test(parsep, bfp, instr->bi_eval_idx - 1,
-				     bfp->pbf_ctx_node)
+				     bfp->pbf_ctx_node, bfp->pbf_position,
+				     bfp->pbf_last)
 		: pin_body_eval_if_ctx(parsep, instr, bfp->pbf_ctx_node);
 	    if (!truth)
 		pc = instr->bi_else;
@@ -2940,12 +2944,35 @@ pin_body_exec_advance (pin_parse_t *parsep)
 		pin_body_collect_path(pwp, start, path, strlen(path),
 				      &nodes, &node_count, &node_size);
 
+	    /*
+	     * The predicate's position() counts the item among its parent's
+	     * matches.  Those are adjacent in nodes[], since the last step
+	     * collects each parent's children together.
+	     */
 	    if (instr->bi_eval_idx != 0) {
 		int kept = 0;
-		for (int i = 0; i < node_count; i++) {
-		    if (pin_body_eval_test(parsep, bfp, instr->bi_eval_idx - 1,
-					   nodes[i]))
-			nodes[kept++] = nodes[i];
+		for (int i = 0; i < node_count; ) {
+		    pin_node_t *first = pin_node_addr(pwp, nodes[i]);
+		    pin_node_id_t parent = first ? first->pn_parent
+			: pin_node_id_null_atom();
+		    int end = i + 1;
+		    while (end < node_count) {
+			pin_node_t *np = pin_node_addr(pwp, nodes[end]);
+			if (np == NULL
+				|| np->pn_parent.pnid_atom.pfa_atom
+				!= parent.pnid_atom.pfa_atom)
+			    break;
+			end += 1;
+		    }
+
+		    for (int j = i; j < end; j++) {
+			if (pin_body_eval_test(parsep, bfp,
+					       instr->bi_eval_idx - 1, nodes[j],
+					       (uint32_t) (j - i + 1),
+					       (uint32_t) (end - i)))
+			    nodes[kept++] = nodes[j];
+		    }
+		    i = end;
 		}
 		node_count = kept;
 	    }

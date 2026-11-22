@@ -164,7 +164,8 @@ pin_body_instr_new (pin_rulebook_t *rb, pin_body_instr_id_t **nextp,
 
 /*
  * Try to parse test as a position()-based comparison.
- * Recognises: position() OP N  where OP is <, <=, =, !=, >, >= and N >= 0.
+ * Recognises: position() OP N  where OP is <, <=, =, !=, >, >= and N >= 0,
+ * as the whole test.
  * Returns 1 and fills op_out/n_out on success; 0 on no match.
  */
 static int
@@ -212,6 +213,11 @@ pin_parse_position_test (const char *test, uint32_t *op_out, uint32_t *n_out)
     unsigned long n = strtoul(test, &endp, 10);
     if (endp == test)
 	return 0;
+
+    while (isspace((unsigned char) *endp))
+	endp += 1;
+    if (*endp != '\0')
+	return 0;			/* more follows, as in "... and x" */
 
     *op_out = op;
     *n_out = (uint32_t) n;
@@ -400,7 +406,9 @@ pin_compile_body_test (pin_rulebook_t *rb, const char *test)
     xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
     pin_filter_set_compile_ns(xfp, NULL, 0);
     pin_filter_clear_compile_error();
+    pin_filter_set_compile_position(xfp, TRUE);
     xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
+    pin_filter_set_compile_position(xfp, FALSE);
     if (prog == NULL)
 	return 0;
 
@@ -416,9 +424,11 @@ pin_compile_body_test (pin_rulebook_t *rb, const char *test)
 /*
  * If sel's last step ends in one predicate, as in "a/b[c > 1]", compile
  * the predicate with pin_compile_body_test(), cut it from sel, and return
- * the program's index + 1.  A predicate that is a number or uses
- * position() or last() depends on the item's position, which a test of
- * one item can't see, so it is left alone, and 0 is returned.
+ * the program's index + 1.  A plain number ("b[2]") is left in sel for
+ * pin_body_collect_path(), and 0 is returned.  Any other predicate whose
+ * value is a number ("b[last()]", "b[last() - 1]") means "position() =",
+ * which we know only by its text: it starts with a digit, "(" or
+ * "last()" and has no comparison.
  */
 static uint32_t
 pin_compile_select_pred (pin_rulebook_t *rb, char *sel)
@@ -435,10 +445,26 @@ pin_compile_select_pred (pin_rulebook_t *rb, char *sel)
     char *pred = open + 1;
     sel[len - 1] = '\0';
 
+    const char *cp = pred;
+    while (isdigit((unsigned char) *cp))
+	cp += 1;
+
     uint32_t idx = 0;
-    if (!isdigit((unsigned char) *pred) && strstr(pred, "position(") == NULL
-	    && strstr(pred, "last(") == NULL)
-	idx = pin_compile_body_test(rb, pred);
+    if (cp == pred || *cp != '\0') {
+	bool numeric = (isdigit((unsigned char) *pred) || *pred == '('
+			|| strncmp(pred, "last()", 6) == 0)
+	    && strpbrk(pred, "=<>") == NULL && strstr(pred, " and ") == NULL
+	    && strstr(pred, " or ") == NULL;
+
+	if (numeric) {
+	    size_t plen = strlen(pred) + sizeof("position() = ()");
+	    char buf[plen];
+	    snprintf(buf, plen, "position() = (%s)", pred);
+	    idx = pin_compile_body_test(rb, buf);
+	} else {
+	    idx = pin_compile_body_test(rb, pred);
+	}
+    }
 
     if (idx != 0)
 	*open = '\0';
@@ -2292,13 +2318,27 @@ pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
 }
 
 /*
+ * Is node inside an xsl:for-each?
+ */
+static bool
+pin_node_in_for_each (xmlNodePtr node)
+{
+    for (xmlNodePtr np = node; np != NULL; np = np->parent) {
+	if (np->type == XML_ELEMENT_NODE && pin_is_xsl(np, "for-each"))
+	    return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
  * Compile expr as a full XPath expression via libxo's XPath parser and
  * xo_eval compiler, store the resulting program on the rulebook, and turn
  * *push (already allocated by the caller) into a PIN_OP_EVAL referencing
  * it.  po_name holds a plain array index into prb_eval_progs[] (see
  * pin_rulebook_eval_prog_add), not a namepool atom.  Returns 0 on success,
  * -1 on a parse/compile failure (reported via pin_error against the node
- * currently being compiled).
+ * currently being compiled, unless it marks the body complex instead).
  *
  * xo_filter_parse_expr() parses a full XPath expression (rather than
  * libxo's usual union of location paths) and returns its root, which
@@ -2324,6 +2364,22 @@ pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
     pin_filter_clear_compile_error();
     xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
     if (prog == NULL) {
+	/*
+	 * Op dispatch has no position() or last() to give.  In a match
+	 * template's for-each, BIA_FOR_EACH has them, so mark the body
+	 * complex and let it fall back there.
+	 */
+	if (!cur->poc_named && pin_node_in_for_each(cur->poc_node)) {
+	    pin_filter_set_compile_position(xfp, TRUE);
+	    prog = xo_eval_compile(xdp, root, dp, ops);
+	    pin_filter_set_compile_position(xfp, FALSE);
+	    if (prog != NULL) {
+		xo_eval_prog_destroy(prog);
+		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
+		return -1;
+	    }
+	}
+
 	pin_report_eval_fail(cur, expr);
 	return -1;
     }
