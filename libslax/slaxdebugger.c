@@ -1907,7 +1907,8 @@ slaxDebugShowCommandHelp (slaxDebugState_t *statep, slaxDebugCommand_t *cmdp,
 	slaxOutput("List of command under '%s':", cmdp->dc_command);
 	for (; np && np->dc_command; np++) {
 	    if (np->dc_help)
-		slaxOutput("%*s%s", indent + 2, "", np->dc_help);
+		slaxOutput("%*s%-15s %s", indent + 2, "",
+			   np->dc_command, np->dc_help);
 	}
 
     } else if (cmdp->dc_help)
@@ -1931,7 +1932,7 @@ slaxDebugCmdHelp (DC_ARGS)
         slaxOutput("List of commands:");
         for (cmdp = slaxDebugCmdTable; cmdp->dc_command; cmdp++) {
             if (cmdp->dc_help)
-                slaxOutput("  %s", cmdp->dc_help);
+                slaxOutput("  %-15s %s", cmdp->dc_command, cmdp->dc_help);
         }
         slaxOutput("%s", "");	/* Avoid compiler warning (empty string) */
         slaxOutput("Command name abbreviations are allowed");
@@ -3632,7 +3633,7 @@ static slaxDebugCommand_t slaxDebugInfoCmdTable[] = {
     },
 
     { "profile",       1, slaxDebugCmdInfoProfile,
-      "Report profiling information [brief | wall]",
+      "Report profiling information: info profile [brief | wall]",
       NULL, NULL,
     },
 
@@ -3649,12 +3650,12 @@ static slaxDebugCommand_t slaxDebugInfoCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugProfileReportCmdTable[] = {
     { "callgraph",     1, slaxDebugCmdProfileReportCallgraph,
-      "Report callgraph profiling information [<file>]",
+      "Report callgraph profiling information: profile report callgraph [<file>]",
       NULL, NULL,
     },
 
     { "flamegraph",    1, slaxDebugCmdProfileReportFlamegraph,
-      "Report flame-graph profiling information [<file>]",
+      "Report flame-graph profiling information: profile report flamegraph [<file>]",
       NULL, NULL,
     },
 
@@ -3723,58 +3724,56 @@ static slaxDebugCommand_t slaxDebugProfileCmdTable[] = {
 
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "append",        2, slaxDebugCmdAppend,
-      "Append a value to a variable $var += value",
+      "Append a value to a variable: append $<var> += <value>",
       NULL, NULL,
     },
 
     { "backtrace",     2, slaxDebugCmdWhere,
-      "Show the backtrace of template calls (alias: bt) [full]",
+      "Show the backtrace of template calls (alias: bt): backtrace [full]",
       NULL, NULL,
     },
 
     { "break",	       1, slaxDebugCmdBreak,
-      "Add a breakpoint, optionally conditional "
-      "(also: when expr) [loc] [if expr]",
+      "Add a breakpoint, optionally conditional: break [loc] [if expr]",
       NULL, NULL,
     },
 
     { "bt",	       1, slaxDebugCmdWhere, NULL, NULL, NULL }, /* Hidden */
 
     { "callflow",      2, slaxDebugCmdCallFlow,
-      "Enable call flow tracing [val]",
+      "Enable/Disable call flow tracing: callflow [on | off]",
       slaxDebugHelpCallFlow, NULL,
     },
 
     { "clear",	       2, slaxDebugCmdClear,
-      "Clear a watchpoint watch variable [$var | num]",
+      "Clear a watchpoint watch variable: clear [$var | num]",
       NULL, slaxDebugClearCmdTable,
     },
 
     { "complete",      8, slaxDebugCmdComplete, NULL, NULL, NULL }, /* Hidden */
 
     { "condition",     4, slaxDebugCmdCondition,
-      "Set, change, or clear a breakpoint's "
-      "condition <num> [expr]",
+      "Set, change, or clear a breakpoint's condition: condition <num> [expr]",
       NULL, NULL,
     },
 
     { "continue",      1, slaxDebugCmdContinue,
-      "Continue running the script [loc]",
+      "Continue running the script: continue [loc]",
       NULL, NULL,
     },
 
     { "delete",	       1, slaxDebugCmdDelete,
-      "Delete all (or one) breakpoints [num]",
+      "Delete all (or one) breakpoints: delete [num]",
       NULL, NULL,
     },
 
     { "down",	       1, slaxDebugCmdDown,
-      "Move the selected frame toward the innermost frame [n]",
+      "Move the selected frame toward the innermost frame: down [n]",
       NULL, NULL,
     },
 
     { "dump",	       1, slaxDebugCmdDump,
-      "Dump internal information about libxml2 objects",
+      "Dump internal information about libxml2 objects: dump [<options>]",
       NULL, slaxDebugDumpCmdTable,
     },
 
@@ -3784,17 +3783,17 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "help",	       1, slaxDebugCmdHelp,
-      "Show this help message [cmd ...] [all]",
+      "Show this help message: help [cmd ...] [all]",
       NULL, NULL,
     },
 
     { "info",	       1, slaxDebugCmdInfo,
-      "Showing info about the script being debugged",
+      "Showing info about the script being debugged: info [<options>]",
       NULL, slaxDebugInfoCmdTable,
     },
 
     { "list",	       1, slaxDebugCmdList,
-      "List contents of the current script [loc]",
+      "List contents of the current script: list [loc]",
       NULL, NULL,
     },
 
@@ -3816,12 +3815,12 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "print",	       1, slaxDebugCmdPrint,
-      "Print the value of an XPath expression <xpath>",
+      "Print the value of an XPath expression: print <xpath>",
       NULL, NULL,
     },
 
     { "profile",       2, slaxDebugCmdProfiler,
-      "Turn profiler on or off [val]",
+      "Profiler subcommand: profile [<options>]",
       NULL, slaxDebugProfileCmdTable,
     },
 
@@ -3836,7 +3835,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "set",	       2, slaxDebugCmdSet,
-      "Set a variable to a new value $var = value",
+      "Set a variable to a new value: set $<var> = <value>",
       NULL, NULL,
     },
 
@@ -3846,13 +3845,12 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "tbreak",	       2, slaxDebugCmdTbreak,
-      "Add a temporary breakpoint, deleted when hit "
-      "(also: when expr) [loc] [if expr]",
+      "Add a temporary breakpoint, deleted when hit: tbreak [loc] [if expr]",
       NULL, NULL,
     },
 
     { "up",	       1, slaxDebugCmdUp,
-      "Move the selected frame toward the outermost frame [n]",
+      "Move the selected frame toward the outermost frame: up [n]",
       NULL, NULL,
     },
 
@@ -3862,7 +3860,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     },
 
     { "watch",	       2, slaxDebugCmdWatch,
-      "Set a watchpoint variable $var",
+      "Set a watchpoint on a variable: watch variable $var",
       NULL, slaxDebugWatchCmdTable,
     },
 
