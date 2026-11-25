@@ -1,66 +1,85 @@
 Type 'help' for help
 (sdb) help
 List of commands:
-  append $var += value  Append a value to a variable
-  backtrace [full] Show the backtrace of template calls (alias: bt)
-  break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
-  callflow [val]  Enable call flow tracing
-  clear watch variable [$var | num]  Clear a watchpoint
-  condition <num> [expr]  Set, change, or clear a breakpoint's condition
-  continue [loc]  Continue running the script
-  delete [num]    Delete all (or one) breakpoints
-  down [n]        Move the selected frame toward the innermost frame
-  dump            Dump internal information about libxml2 objects
+  append          Append a value to a variable: append $<var> += <value>
+  backtrace       Show the backtrace of template calls (alias: bt): backtrace [full]
+  break           Add a breakpoint, optionally conditional: break [loc] [if expr]
+  callflow        Enable/Disable call flow tracing: callflow [on | off]
+  clear           Clear a watchpoint watch variable: clear [$var | num]
+  condition       Set, change, or clear a breakpoint's condition: condition <num> [expr]
+  continue        Continue running the script: continue [loc]
+  delete          Delete all (or one) breakpoints: delete [num]
+  down            Move the selected frame toward the innermost frame: down [n]
+  dump            Dump internal information about libxml2 objects: dump [<options>]
   finish          Finish the current template
-  help [cmd ...] [all]  Show this help message
-  info            Showing info about the script being debugged
-  list [loc]      List contents of the current script
+  help            Show this help message: help [cmd ...] [all]
+  info            Showing info about the script being debugged: info [<options>]
+  list            List contents of the current script: list [loc]
   locals          List contents of local variables
   next            Execute the over instruction, stepping over calls
   over            Execute the current instruction hierarchy
-  print <xpath>   Print the value of an XPath expression
-  profile [val]   Turn profiler on or off
+  print           Print the value of an XPath expression: print <xpath>
+  profile         Profiler subcommand: profile [<options>]
   reload          Reload the script contents
   run             Restart the script
-  set $var = value  Set a variable to a new value
+  set             Set a variable to a new value: set $<var> = <value>
   step            Execute the next instruction, stepping into calls
-  tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
-  up [n]          Move the selected frame toward the outermost frame
+  tbreak          Add a temporary breakpoint, deleted when hit: tbreak [loc] [if expr]
+  up              Move the selected frame toward the outermost frame: up [n]
   verbose         Turn on verbose (-v) output logging
-  watch variable $var  Set a watchpoint on a variable
+  watch           Set a watchpoint on a variable: watch variable $var
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
 
 Command name abbreviations are allowed
+(sdb) help profile
+List of command under 'profile':
+    on              Enable profiling
+    off             Disable profiling
+    clear           Clear profiling information
+    callgraph       Enable callgraph profiling, writing output to <file>
+    flamegraph      Enable flame-graph profiling, writing output to <file>
+    brief           Report profiling information, briefly
+    wall            Report profiling information, wall-clock
+    report          Report profiling information [brief | wall | callgraph | flamegraph] [<file>]
+(sdb) help info
+List of command under 'info':
+    breakpoints     Display current breakpoints
+    insert          Display current insertion point
+    files           Display open files (imports, includes)
+    output          Display output document
+    locals          Display local variables
+    profile         Report profiling information: info profile [brief | wall]
+    watch           Display current watchpoints
 (sdb) ?
 List of commands:
-  append $var += value  Append a value to a variable
-  backtrace [full] Show the backtrace of template calls (alias: bt)
-  break [loc] [if expr]  Add a breakpoint, optionally conditional (also: when expr)
-  callflow [val]  Enable call flow tracing
-  clear watch variable [$var | num]  Clear a watchpoint
-  condition <num> [expr]  Set, change, or clear a breakpoint's condition
-  continue [loc]  Continue running the script
-  delete [num]    Delete all (or one) breakpoints
-  down [n]        Move the selected frame toward the innermost frame
-  dump            Dump internal information about libxml2 objects
+  append          Append a value to a variable: append $<var> += <value>
+  backtrace       Show the backtrace of template calls (alias: bt): backtrace [full]
+  break           Add a breakpoint, optionally conditional: break [loc] [if expr]
+  callflow        Enable/Disable call flow tracing: callflow [on | off]
+  clear           Clear a watchpoint watch variable: clear [$var | num]
+  condition       Set, change, or clear a breakpoint's condition: condition <num> [expr]
+  continue        Continue running the script: continue [loc]
+  delete          Delete all (or one) breakpoints: delete [num]
+  down            Move the selected frame toward the innermost frame: down [n]
+  dump            Dump internal information about libxml2 objects: dump [<options>]
   finish          Finish the current template
-  help [cmd ...] [all]  Show this help message
-  info            Showing info about the script being debugged
-  list [loc]      List contents of the current script
+  help            Show this help message: help [cmd ...] [all]
+  info            Showing info about the script being debugged: info [<options>]
+  list            List contents of the current script: list [loc]
   locals          List contents of local variables
   next            Execute the over instruction, stepping over calls
   over            Execute the current instruction hierarchy
-  print <xpath>   Print the value of an XPath expression
-  profile [val]   Turn profiler on or off
+  print           Print the value of an XPath expression: print <xpath>
+  profile         Profiler subcommand: profile [<options>]
   reload          Reload the script contents
   run             Restart the script
-  set $var = value  Set a variable to a new value
+  set             Set a variable to a new value: set $<var> = <value>
   step            Execute the next instruction, stepping into calls
-  tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit (also: when expr)
-  up [n]          Move the selected frame toward the outermost frame
+  tbreak          Add a temporary breakpoint, deleted when hit: tbreak [loc] [if expr]
+  up              Move the selected frame toward the outermost frame: up [n]
   verbose         Turn on verbose (-v) output logging
-  watch variable $var  Set a watchpoint on a variable
+  watch           Set a watchpoint on a variable: watch variable $var
   where           Show the backtrace of template calls (alias: bt)
   quit            Quit debugger
 
