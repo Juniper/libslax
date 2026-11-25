@@ -59,33 +59,25 @@ slaxIoCompleteEmit (const char *name, const char *help, size_t wordlen,
 /*
  * isocline completer for sdb commands: "prefix" is the input text up
  * to the cursor, from which slaxDebugComplete() resolves both which
- * command table applies and the in-progress word to complete.
+ * command table applies and the in-progress word to complete.  When
+ * "prefix" is already a complete, executable command on its own, a
+ * leading informational row offers to run it, since there may be no
+ * further completions to suggest.
  */
 static void
 slaxIoCompleter (ic_completion_env_t *cenv, const char *prefix)
 {
+    if (slaxDebugCompleteIsCommand(prefix))
+	ic_add_completion_info(cenv, "<[Enter]>", "Execute this command");
+
     slaxDebugComplete(prefix, slaxIoCompleteEmit, cenv);
 }
 
 /*
- * Emit one completion match for the "?" key: print the command name
- * and, if any, its help text.
- */
-static void
-slaxIoCompleteHelpEmit (const char *name, const char *help,
-	size_t wordlen UNUSED, void *arg UNUSED)
-{
-    if (help != NULL)
-	ic_printf("  %s - %s\n", name, help);
-    else
-	ic_printf("  %s\n", name);
-}
-
-/*
  * "?": inside an open quote, self-insert the literal "?" so quoted
- * text (e.g. an XPath string) isn't interrupted; otherwise print the
- * completions for the word up to the cursor (mid-word included)
- * without inserting anything.  The quote-scan itself is
+ * text (e.g. an XPath string) isn't interrupted; otherwise open the
+ * same live completion list TAB would, below the prompt, leaving the
+ * prompt and cursor exactly where they are.  The quote-scan itself is
  * slaxDebugInQuote(), an isocline-agnostic function tested headlessly
  * via the hidden 'inquote' command.
  */
@@ -94,19 +86,13 @@ slaxIoKeyHelp (ic_keyaction_env_t *kenv)
 {
     long cursor;
     const char *input = ic_keyaction_input(kenv, &cursor);
-    char *prefix;
 
     if (slaxDebugInQuote(input, (size_t) cursor)) {
 	ic_keyaction_replace(kenv, "?", 0, 0);
 	return;
     }
 
-    prefix = (char *) alloca(cursor + 1);
-    memcpy(prefix, input, cursor);
-    prefix[cursor] = '\0';
-
-    ic_printf("\n");
-    slaxDebugComplete(prefix, slaxIoCompleteHelpEmit, NULL);
+    ic_keyaction_open_completions(kenv);
 }
 
 static char *slaxIoDabbrevPrefix;
@@ -246,6 +232,12 @@ slaxIoBindKeys (void)
     ic_bind_key(IC_KEY_MOD_ALT | '/', &slaxIoKeyDabbrevExpand, NULL);
     ic_bind_key(IC_KEY_MOD_ALT | '.', &slaxIoKeyLastArg, NULL);
     ic_bind_key(7, &slaxIoKeyDismiss, NULL);
+
+    ic_enable_completion_live_list(true);
+    ic_enable_completion_accept_on_space(true);
+    ic_no_numbers(true);
+    ic_no_selection_arrow(true);
+    ic_inverse_selection(true);
 }
 #endif /* defined(WITH_ISOCLINE) */
 
