@@ -68,7 +68,7 @@ static void
 slaxIoCompleter (ic_completion_env_t *cenv, const char *prefix)
 {
     if (slaxDebugCompleteIsCommand(prefix))
-	ic_add_completion_info(cenv, "<[Enter]>", "Execute this command");
+	ic_add_completion_info(cenv, "<\\[Enter]>", "Execute this command");
 
     slaxDebugComplete(prefix, slaxIoCompleteEmit, cenv);
 }
