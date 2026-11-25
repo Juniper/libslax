@@ -1,0 +1,28 @@
+Type 'help' for help
+(sdb) iscommand
+false
+(sdb) iscommand xyz
+false
+(sdb) iscommand bt
+true
+(sdb) iscommand break
+true
+(sdb) iscommand break 5
+true
+(sdb) iscommand b
+true
+(sdb) iscommand info
+true
+(sdb) iscommand info watch
+true
+(sdb) iscommand info wat
+true
+(sdb) iscommand clear watch xyz
+true
+(sdb) iscommand print
+true
+(sdb) iscommand print $x
+true
+(sdb) iscommand p
+true
+(sdb) quit
