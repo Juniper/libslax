@@ -1347,6 +1347,32 @@ slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg)
     }
 }
 
+/*
+ * Report whether "line" already resolves to a complete, directly
+ * executable command, the same way slaxDebugRunCommand() resolves a
+ * line before running it (including abbreviation matching): any
+ * trailing words beyond the match are left for that command's own
+ * dc_func to interpret as arguments (a breakpoint number, an XPath
+ * expression, ...), exactly as real dispatch does, so they don't
+ * disqualify the line.  Used to offer an "Execute this command" row
+ * in the completion list once nothing more needs to be typed.
+ */
+int
+slaxDebugCompleteIsCommand (const char *line)
+{
+    const char *argv[MAXARGS];
+    char *copy = ALLOCADUP(line);
+    int argc = slaxDebugSplitArgs(copy, argv, MAXARGS);
+    slaxDebugCommand_t *cmdp;
+
+    if (argc <= 0)
+	return FALSE;
+
+    cmdp = slaxDebugFindCommand(NULL, NULL, argv);
+
+    return (cmdp != NULL && cmdp->dc_func != NULL);
+}
+
 int
 slaxDebugInQuote (const char *input, size_t cursor)
 {
@@ -1657,6 +1683,24 @@ slaxDebugCmdLastArg (DC_ARGS)
 	slaxOutput("none");
     else
 	slaxOutput("%.*s", (int) len, token);
+}
+
+/*
+ * Hidden 'iscommand' command, exposing slaxDebugCompleteIsCommand()
+ * for testing without a tty: reports whether the text following
+ * "iscommand " is already a complete, directly executable command.
+ */
+static void
+slaxDebugCmdIsCommand (DC_ARGS)
+{
+    const char *line = commandline;
+
+    while (*line && !isspace((int) *line))
+	line += 1;
+    while (*line && isspace((int) *line))
+	line += 1;
+
+    slaxOutput("%s", slaxDebugCompleteIsCommand(line) ? "true" : "false");
 }
 
 static int
@@ -3508,7 +3552,7 @@ slaxDebugCmdQuit (DC_ARGS)
  */
 static slaxDebugCommand_t slaxDebugWatchCmdTable[] = {
     { "variable",      1, slaxDebugCmdWatchVariable,
-      "variable $var  Set a watchpoint on a variable",
+      "Set a watchpoint on a variable $var",
       NULL, NULL,
     },
 
@@ -3520,12 +3564,12 @@ static slaxDebugCommand_t slaxDebugWatchCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugDumpCmdTable[] = {
     { "var",	       1, slaxDebugCmdDumpVar,
-      "var $var        Dump information on a variable",
+      "Dump information on a variable $var",
       NULL, NULL,
     },
 
     { "expr",	       1, slaxDebugCmdDumpExpr,
-      "expr $expr      Dump an expression (nodeset)",
+      "Dump an expression (nodeset) $expr",
       NULL, NULL,
     },
 
@@ -3537,7 +3581,7 @@ static slaxDebugCommand_t slaxDebugDumpCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugClearWatchCmdTable[] = {
     { "variable",      1, slaxDebugCmdClearWatchVariable,
-      "variable [$var | num]  Clear a watchpoint",
+      "Clear a watchpoint [$var | num]",
       NULL, NULL,
     },
 
@@ -3549,7 +3593,7 @@ static slaxDebugCommand_t slaxDebugClearWatchCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugClearCmdTable[] = {
     { "watch",	       1, slaxDebugCmdClearWatch,
-      "watch variable [$var | num]  Clear a watchpoint",
+      "Clear a watchpoint watch variable [$var | num]",
       NULL, slaxDebugClearWatchCmdTable,
     },
 
@@ -3561,39 +3605,39 @@ static slaxDebugCommand_t slaxDebugClearCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugInfoCmdTable[] = {
     { "breakpoints",   1, slaxDebugCmdInfoBreakpoints,
-      "breakpoints     Display current breakpoints",
+      "Display current breakpoints",
       NULL, NULL,
     },
 
     { "insert",	       1, slaxDebugCmdInfoInsert,
-      "insert          Display current insertion point",
+      "Display current insertion point",
       NULL, NULL,
     },
 
     { "nodes",	       1, slaxDebugCmdInfoNodes, NULL, NULL, NULL }, /* Hidden */
 
     { "files",	       1, slaxDebugCmdInfoFiles,
-      "files           Display open files (imports, includes)",
+      "Display open files (imports, includes)",
       NULL, NULL,
     },
 
     { "output",	       1, slaxDebugCmdInfoOutput,
-      "output          Display output document",
+      "Display output document",
       NULL, NULL,
     },
 
     { "locals",	       1, slaxDebugCmdInfoLocals,
-      "locals          Display local variables",
+      "Display local variables",
       NULL, NULL,
     },
 
     { "profile",       1, slaxDebugCmdInfoProfile,
-      "profile [brief | wall]  Report profiling information",
+      "Report profiling information [brief | wall]",
       NULL, NULL,
     },
 
     { "watch",	       1, slaxDebugCmdInfoWatch,
-      "watch           Display current watchpoints",
+      "Display current watchpoints",
       NULL, NULL,
     },
 
@@ -3605,22 +3649,22 @@ static slaxDebugCommand_t slaxDebugInfoCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugProfileReportCmdTable[] = {
     { "callgraph",     1, slaxDebugCmdProfileReportCallgraph,
-      "callgraph [<file>]  Report callgraph profiling information",
+      "Report callgraph profiling information [<file>]",
       NULL, NULL,
     },
 
     { "flamegraph",    1, slaxDebugCmdProfileReportFlamegraph,
-      "flamegraph [<file>]  Report flame-graph profiling information",
+      "Report flame-graph profiling information [<file>]",
       NULL, NULL,
     },
 
     { "brief",	       1, slaxDebugCmdProfileReportBrief,
-      "brief           Report profiling information, briefly",
+      "Report profiling information, briefly",
       NULL, NULL,
     },
 
     { "wall",	       1, slaxDebugCmdProfileReportWall,
-      "wall            Report profiling information, wall-clock",
+      "Report profiling information, wall-clock",
       NULL, NULL,
     },
 
@@ -3632,45 +3676,45 @@ static slaxDebugCommand_t slaxDebugProfileReportCmdTable[] = {
  */
 static slaxDebugCommand_t slaxDebugProfileCmdTable[] = {
     { "on",	       2, slaxDebugCmdProfileOn,
-      "on              Enable profiling",
+      "Enable profiling",
       NULL, NULL,
     },
 
     { "off",	       3, slaxDebugCmdProfileOff,
-      "off             Disable profiling",
+      "Disable profiling",
       NULL, NULL,
     },
 
     { "clear",	       1, slaxDebugCmdProfileClear,
-      "clear           Clear profiling information",
+      "Clear profiling information",
       NULL, NULL,
     },
 
     { "callgraph",     1, slaxDebugCmdProfileCallgraph,
-      "callgraph <file>  Enable callgraph profiling, writing output "
+      "Enable callgraph profiling, writing output "
       "to <file>",
       NULL, NULL,
     },
 
     { "flamegraph",    1, slaxDebugCmdProfileFlamegraph,
-      "flamegraph <file>  Enable flame-graph profiling, writing output "
+      "Enable flame-graph profiling, writing output "
       "to <file>",
       NULL, NULL,
     },
 
     { "brief",	       1, slaxDebugCmdProfileReportBrief,
-      "brief           Report profiling information, briefly",
+      "Report profiling information, briefly",
       NULL, NULL,
     },
 
     { "wall",	       1, slaxDebugCmdProfileReportWall,
-      "wall            Report profiling information, wall-clock",
+      "Report profiling information, wall-clock",
       NULL, NULL,
     },
 
     { "report",	       1, slaxDebugCmdProfileReport,
-      "report [brief | wall | callgraph | flamegraph] [<file>]  "
-      "Report profiling information",
+      "Report profiling information "
+      "[brief | wall | callgraph | flamegraph] [<file>]",
       NULL, slaxDebugProfileReportCmdTable,
     },
 
@@ -3679,156 +3723,156 @@ static slaxDebugCommand_t slaxDebugProfileCmdTable[] = {
 
 static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "append",        2, slaxDebugCmdAppend,
-      "append $var += value  Append a value to a variable",
+      "Append a value to a variable $var += value",
       NULL, NULL,
     },
 
     { "backtrace",     2, slaxDebugCmdWhere,
-      "backtrace [full] Show the backtrace of template calls (alias: bt)",
+      "Show the backtrace of template calls (alias: bt) [full]",
       NULL, NULL,
     },
 
     { "break",	       1, slaxDebugCmdBreak,
-      "break [loc] [if expr]  Add a breakpoint, optionally conditional "
-      "(also: when expr)",
+      "Add a breakpoint, optionally conditional "
+      "(also: when expr) [loc] [if expr]",
       NULL, NULL,
     },
 
     { "bt",	       1, slaxDebugCmdWhere, NULL, NULL, NULL }, /* Hidden */
 
     { "callflow",      2, slaxDebugCmdCallFlow,
-      "callflow [val]  Enable call flow tracing",
+      "Enable call flow tracing [val]",
       slaxDebugHelpCallFlow, NULL,
     },
 
     { "clear",	       2, slaxDebugCmdClear,
-      "clear watch variable [$var | num]  Clear a watchpoint",
+      "Clear a watchpoint watch variable [$var | num]",
       NULL, slaxDebugClearCmdTable,
     },
 
     { "complete",      8, slaxDebugCmdComplete, NULL, NULL, NULL }, /* Hidden */
 
     { "condition",     4, slaxDebugCmdCondition,
-      "condition <num> [expr]  Set, change, or clear a breakpoint's "
-      "condition",
+      "Set, change, or clear a breakpoint's "
+      "condition <num> [expr]",
       NULL, NULL,
     },
 
     { "continue",      1, slaxDebugCmdContinue,
-      "continue [loc]  Continue running the script",
+      "Continue running the script [loc]",
       NULL, NULL,
     },
 
     { "delete",	       1, slaxDebugCmdDelete,
-      "delete [num]    Delete all (or one) breakpoints",
+      "Delete all (or one) breakpoints [num]",
       NULL, NULL,
     },
 
     { "down",	       1, slaxDebugCmdDown,
-      "down [n]        Move the selected frame toward the innermost frame",
+      "Move the selected frame toward the innermost frame [n]",
       NULL, NULL,
     },
 
     { "dump",	       1, slaxDebugCmdDump,
-      "dump            Dump internal information about libxml2 objects",
+      "Dump internal information about libxml2 objects",
       NULL, slaxDebugDumpCmdTable,
     },
 
     { "finish",	       1, slaxDebugCmdFinish,
-      "finish          Finish the current template",
+      "Finish the current template",
       NULL, NULL,
     },
 
     { "help",	       1, slaxDebugCmdHelp,
-      "help [cmd ...] [all]  Show this help message",
+      "Show this help message [cmd ...] [all]",
       NULL, NULL,
     },
 
     { "info",	       1, slaxDebugCmdInfo,
-      "info            Showing info about the script being debugged",
+      "Showing info about the script being debugged",
       NULL, slaxDebugInfoCmdTable,
     },
 
     { "list",	       1, slaxDebugCmdList,
-      "list [loc]      List contents of the current script",
+      "List contents of the current script [loc]",
       NULL, NULL,
     },
 
     { "locals",	       2, slaxDebugCmdLocals,
-      "locals          List contents of local variables",
+      "List contents of local variables",
       NULL, NULL,
     },
 
     { "mode",	       1, slaxDebugCmdMode, NULL, NULL, NULL }, /* Hidden */
 
     { "next",	       1, slaxDebugCmdNext,
-      "next            Execute the over instruction, stepping over calls",
+      "Execute the over instruction, stepping over calls",
       NULL, NULL,
     },
 
     { "over",	       1, slaxDebugCmdOver,
-      "over            Execute the current instruction hierarchy",
+      "Execute the current instruction hierarchy",
       NULL, NULL,
     },
 
     { "print",	       1, slaxDebugCmdPrint,
-      "print <xpath>   Print the value of an XPath expression",
+      "Print the value of an XPath expression <xpath>",
       NULL, NULL,
     },
 
     { "profile",       2, slaxDebugCmdProfiler,
-      "profile [val]   Turn profiler on or off",
+      "Turn profiler on or off [val]",
       NULL, slaxDebugProfileCmdTable,
     },
 
     { "reload",	       3, slaxDebugCmdReload,
-      "reload          Reload the script contents",
+      "Reload the script contents",
       NULL, NULL,
     },
 
     { "run",	       3, slaxDebugCmdRun,
-      "run             Restart the script",
+      "Restart the script",
       NULL, NULL,
     },
 
     { "set",	       2, slaxDebugCmdSet,
-      "set $var = value  Set a variable to a new value",
+      "Set a variable to a new value $var = value",
       NULL, NULL,
     },
 
     { "step",	       1, slaxDebugCmdStep,
-      "step            Execute the next instruction, stepping into calls",
+      "Execute the next instruction, stepping into calls",
       NULL, NULL,
     },
 
     { "tbreak",	       2, slaxDebugCmdTbreak,
-      "tbreak [loc] [if expr]  Add a temporary breakpoint, deleted when hit "
-      "(also: when expr)",
+      "Add a temporary breakpoint, deleted when hit "
+      "(also: when expr) [loc] [if expr]",
       NULL, NULL,
     },
 
     { "up",	       1, slaxDebugCmdUp,
-      "up [n]          Move the selected frame toward the outermost frame",
+      "Move the selected frame toward the outermost frame [n]",
       NULL, NULL,
     },
 
     { "verbose",       1, slaxDebugCmdVerbose,
-      "verbose         Turn on verbose (-v) output logging",
+      "Turn on verbose (-v) output logging",
       slaxDebugHelpVerbose, NULL,
     },
 
     { "watch",	       2, slaxDebugCmdWatch,
-      "watch variable $var  Set a watchpoint on a variable",
+      "Set a watchpoint variable $var",
       NULL, slaxDebugWatchCmdTable,
     },
 
     { "where",	       1, slaxDebugCmdWhere,
-      "where           Show the backtrace of template calls (alias: bt)",
+      "Show the backtrace of template calls (alias: bt)",
       NULL, NULL,
     },
 
     { "quit",	       1, slaxDebugCmdQuit,
-      "quit            Quit debugger",
+      "Quit debugger",
       NULL, NULL,
     },
 
@@ -3840,6 +3884,7 @@ static slaxDebugCommand_t slaxDebugCmdTable[] = {
     { "?",	       1, slaxDebugCmdHelp, NULL, NULL, NULL }, /* Hidden */
     { "dabbrev",       7, slaxDebugCmdDabbrev, NULL, NULL, NULL }, /* Hidden */
     { "inquote",       7, slaxDebugCmdInQuote, NULL, NULL, NULL }, /* Hidden */
+    { "iscommand",     9, slaxDebugCmdIsCommand, NULL, NULL, NULL }, /* Hidden */
     { "lastarg",       7, slaxDebugCmdLastArg, NULL, NULL, NULL }, /* Hidden */
 
     { NULL, 0, NULL, NULL, NULL, NULL }
