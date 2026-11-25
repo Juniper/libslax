@@ -195,6 +195,15 @@ void
 slaxDebugComplete (const char *line, slaxDebugCompleteFunc_t emit, void *arg);
 
 /*
+ * Report whether "line" already resolves to a complete, directly
+ * executable command (including abbreviations), the same way command
+ * dispatch would resolve it.  Used to offer an "Execute this command"
+ * row in the completion list once nothing more needs to be typed.
+ */
+int
+slaxDebugCompleteIsCommand (const char *line);
+
+/*
  * Report whether "cursor" bytes into "input" falls inside an open
  * single- or double-quote, scanning from the start of the line.
  * Used by the "?" key binding to decide between self-inserting the
