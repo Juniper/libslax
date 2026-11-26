@@ -1,0 +1,2 @@
+../../../tests/pin/pin_08.106.in:21: error: XPath expression reaches outside the context node's subtree and ancestors (an absolute path): /top/@id
+pin_08.test: pin_compile failed

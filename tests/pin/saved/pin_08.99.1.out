@@ -1,0 +1,21 @@
+compiled 2 patterns
+<out>
+   <g>
+      <first>a1</first>
+      <last>a3</last>
+      <second>2</second>
+      <count>3</count>
+      <sum>6</sum>
+      <mixed/>
+      <name>t</name>
+   </g>
+   <g>
+      <first>b1</first>
+      <last>b1</last>
+      <second/>
+      <count>1</count>
+      <sum>5</sum>
+      <mixed>xyz</mixed>
+      <name>t</name>
+   </g>
+</out>

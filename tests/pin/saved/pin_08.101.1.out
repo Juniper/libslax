@@ -1,0 +1,27 @@
+compiled 2 patterns
+<out>
+   <t>
+      <p>g</p>
+      <pid>G1</pid>
+      <aid>T</aid>
+      <depth>2</depth>
+   </t>
+   <t>
+      <p>g</p>
+      <pid>G1</pid>
+      <aid>T</aid>
+      <depth>2</depth>
+   </t>
+   <t>
+      <p>g</p>
+      <pid>G1</pid>
+      <aid>T</aid>
+      <depth>2</depth>
+   </t>
+   <t>
+      <p>g</p>
+      <pid>G2</pid>
+      <aid>T</aid>
+      <depth>2</depth>
+   </t>
+</out>

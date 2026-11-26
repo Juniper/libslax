@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.105.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Refused: count(//t) uses "//" from the root, which reaches outside
+    the context node's subtree and ancestors.
+    xsltproc gives (one line):
+      <out><g>4</g><g>4</g></out>
+    pin reports a compile error instead.
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:key name="k" match="t" use="@n"/>
+  <xsl:template match="g">
+    <g><xsl:value-of select="count(//t)"/></g>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,0 +1,2 @@
+../../../tests/pin/pin_08.105.in:21: error: XPath expression reaches outside the context node's subtree and ancestors ("//" from the root): count(//t)
+pin_08.test: pin_compile failed

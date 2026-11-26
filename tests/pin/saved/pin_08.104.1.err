@@ -1,0 +1,2 @@
+../../../tests/pin/pin_08.104.in:21: error: XPath expression reaches outside the context node's subtree and ancestors (the preceding-sibling axis): preceding-sibling::t
+pin_08.test: pin_compile failed

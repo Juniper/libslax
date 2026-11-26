@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.104.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Refused: preceding-sibling::t uses the preceding-sibling axis,
+    which reaches outside the context node's subtree and ancestors.
+    xsltproc gives (one line):
+      <out><g/><g/></out>
+    pin reports a compile error instead.
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:key name="k" match="t" use="@n"/>
+  <xsl:template match="g">
+    <g><xsl:value-of select="preceding-sibling::t"/></g>
+  </xsl:template>
+</xsl:stylesheet>

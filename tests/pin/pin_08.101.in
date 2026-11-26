@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.101.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Upward steps: the parent, a parent's attribute, and an ancestor's
+    attribute are all in reach.
+    Expected (one line):
+      <out><t><p>g</p><pid>G1</pid><aid>T</aid><depth>2</depth></t><t><p>g</p><pid>G1</pid><aid>T</aid><depth>2</depth></t><t><p>g</p><pid>G1</pid><aid>T</aid><depth>2</depth></t><t><p>g</p><pid>G2</pid><aid>T</aid><depth>2</depth></t></out>
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:template match="g">
+    <xsl:for-each select="t">
+      <t>
+        <p><xsl:value-of select="name(..)"/></p>
+        <pid><xsl:value-of select="../@id"/></pid>
+        <aid><xsl:value-of select="ancestor::*[2]/@id"/></aid>
+        <depth><xsl:value-of select="count(ancestor::*)"/></depth>
+      </t>
+    </xsl:for-each>
+  </xsl:template>
+</xsl:stylesheet>

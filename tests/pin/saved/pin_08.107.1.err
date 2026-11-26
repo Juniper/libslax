@@ -1,0 +1,3 @@
+pin_08: filter expression error: unexpected input: 'key()'; expected attribute axis ('@'), parent axis ('..'), descendant operator ('//'), minus sign ('-'), not sign ('!'), open parentheses ('('), etc.
+../../../tests/pin/pin_08.107.in:21: error: unable to parse XPath expression: key('k', 1)
+pin_08.test: pin_compile failed

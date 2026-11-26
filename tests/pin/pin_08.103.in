@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.103.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    A variable bound to the context node holds the node: its string
+    value, a copy of it, and its name.
+    Expected (one line):
+      <out><g><v>a1a2a3</v><n>g</n><c><g id="G1"><t n="1">a1</t><t n="2">a2</t><t n="3">a3</t></g></c></g><g><v>b1xyz</v><n>g</n><c><g id="G2"><t n="5">b1</t><m>x<b>y</b>z</m></g></c></g></out>
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:template match="g">
+    <xsl:variable name="d" select="."/>
+    <g>
+      <v><xsl:value-of select="$d"/></v>
+      <n><xsl:value-of select="name($d)"/></n>
+      <c><xsl:copy-of select="$d"/></c>
+    </g>
+  </xsl:template>
+</xsl:stylesheet>

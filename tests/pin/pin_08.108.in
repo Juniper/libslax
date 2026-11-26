@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.108.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Attribute value templates with general expressions: position() and
+    last() in a loop, a mix of literal text and expressions, a literal
+    holding a quote, an escaped brace, a brace inside a quoted string,
+    and a parent's attribute.
+    Expected (one line):
+      <out><p a="1" b="x1-1/3y" c="it's a1" d="{1}" e="{a1}" f="G1"/><p a="2" b="x2-2/3y" c="it's a2" d="{2}" e="{a2}" f="G1"/><p a="3" b="x3-3/3y" c="it's a3" d="{3}" e="{a3}" f="G1"/><p a="1" b="x5-1/1y" c="it's b1" d="{5}" e="{b1}" f="G2"/></out>
+  -->
+
+  <xsl:variable name="sep" select="'/'"/>
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:template match="g">
+    <xsl:for-each select="t">
+      <p a="{position()}" b="x{@n}-{position()}{$sep}{last()}y"
+         c="it's {.}" d="{{{@n}}}" e="{concat('{', ., '}')}"
+         f="{../@id}"/>
+    </xsl:for-each>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,14 +1,14 @@
 compiled 2 patterns
 <out>
    <rec>
-      <dot>main-alpha</dot>
+      <dot>main-alphas-alpha</dot>
       <attr>alpha</attr>
       <child>s-alpha</child>
       <lit>via-literal</lit>
       <var>via-var</var>
    </rec>
    <rec>
-      <dot>main-beta</dot>
+      <dot>main-betas-beta</dot>
       <attr>beta</attr>
       <child>s-beta</child>
       <lit>via-literal</lit>

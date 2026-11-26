@@ -1,0 +1,17 @@
+compiled 2 patterns
+<out>
+   <g>
+      <eq>true</eq>
+      <ne>true</ne>
+      <gt>false</gt>
+      <str>true</str>
+      <has3/>
+      <nom/>
+   </g>
+   <g>
+      <eq>false</eq>
+      <ne>true</ne>
+      <gt>true</gt>
+      <str>false</str>
+   </g>
+</out>

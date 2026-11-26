@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.99.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Positional predicates, count, sum, the deep string value of mixed
+    content, and name() of a positional step.
+    Expected (one line):
+      <out><g><first>a1</first><last>a3</last><second>2</second><count>3</count><sum>6</sum><mixed/><name>t</name></g><g><first>b1</first><last>b1</last><second/><count>1</count><sum>5</sum><mixed>xyz</mixed><name>t</name></g></out>
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:template match="g">
+    <g>
+      <first><xsl:value-of select="t[1]"/></first>
+      <last><xsl:value-of select="t[last()]"/></last>
+      <second><xsl:value-of select="t[position() = 2]/@n"/></second>
+      <count><xsl:value-of select="count(t)"/></count>
+      <sum><xsl:value-of select="sum(t/@n)"/></sum>
+      <mixed><xsl:value-of select="string(m)"/></mixed>
+      <name><xsl:value-of select="name(*[1])"/></name>
+    </g>
+  </xsl:template>
+</xsl:stylesheet>

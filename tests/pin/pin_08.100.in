@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.100.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Existential comparisons: a node set compares true when any member
+    does.
+    Expected (one line):
+      <out><g><eq>true</eq><ne>true</ne><gt>false</gt><str>true</str><has3/><nom/></g><g><eq>false</eq><ne>true</ne><gt>true</gt><str>false</str></g></out>
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:template match="g">
+    <g>
+      <eq><xsl:value-of select="t/@n = 2"/></eq>
+      <ne><xsl:value-of select="t/@n != 2"/></ne>
+      <gt><xsl:value-of select="t/@n &gt; 4"/></gt>
+      <str><xsl:value-of select="t = 'a3'"/></str>
+      <xsl:if test="t[@n = 3]"><has3/></xsl:if>
+      <xsl:if test="not(m)"><nom/></xsl:if>
+    </g>
+  </xsl:template>
+</xsl:stylesheet>
