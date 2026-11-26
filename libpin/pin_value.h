@@ -103,6 +103,8 @@ pin_value_is_true (pin_value_t v)
 	return v.pv_atom != 0;
     if (v.pv_type == PVT_NUMBER)
 	return v.pv_atom != 0;
+    if (v.pv_type == PVT_NODE)
+	return 1;
     return 0;
 }
 

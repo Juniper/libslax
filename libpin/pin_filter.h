@@ -42,6 +42,18 @@ xo_filter_t *
 pin_filter_create (xo_handle_t *xop, pin_workspace_t *pwp);
 
 /*
+ * Create the filter for compiled XPath expressions.  Its ops give
+ * libxo node-sets over the retained tree, so the context node
+ * (xo_eval_prog_run_ctx's xec_node, from pin_filter_eval_node) is
+ * where paths start.
+ */
+xo_filter_t *
+pin_filter_create_eval (xo_handle_t *xop, pin_workspace_t *pwp);
+
+uint32_t
+pin_filter_eval_node (pin_node_id_t id);
+
+/*
  * Add an XPath match expression to a filter returned by pin_filter_create.
  * May be called multiple times to accumulate patterns.  Returns 0 on
  * success, -1 if the expression cannot be parsed or compiled.
@@ -96,16 +108,12 @@ void
 pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp);
 
 /*
- * Set position() and last() for the item under test (position 0 =
- * none).  These functions compile only while allowed, which the
- * buffered for-each does for its own tests; op dispatch has no
- * position to give them.
+ * Set the rulebook whose global variables back $name references that
+ * no local binding answers.
  */
+struct pin_rulebook_s;
 void
-pin_filter_set_position (xo_filter_t *xfp, uint32_t position, uint32_t last);
-
-void
-pin_filter_set_compile_position (xo_filter_t *xfp, int allowed);
+pin_filter_set_rulebook (xo_filter_t *xfp, struct pin_rulebook_s *prbp);
 
 /*
  * Record the in-scope prefix/uri bindings (the compiler's namespace

@@ -2088,9 +2088,13 @@ pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
     vstate.pes_var_count = (uint32_t) nvars;
 
     xo_filter_t *xfp = rb->prb_eval_xfp;
-    pin_filter_set_cur_node(xfp, ctx_node);
     pin_filter_set_esp(xfp, &vstate);
-    pin_filter_set_position(xfp, position, last);
+
+    xo_eval_ctx_t ctx = {
+	.xec_node = pin_filter_eval_node(ctx_node),
+	.xec_position = position ? position : 1,
+	.xec_size = position ? last : 1,
+    };
 
     uint32_t ns_count = 0;
     const pin_ns_map_t *ns_bindings = pin_rulebook_eval_prog_ns(rb, idx,
@@ -2099,9 +2103,9 @@ pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
 
     struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
     int is_boolean = 0, bool_value = 0, is_missing = 0;
-    char *str = xo_eval_prog_run_simple(NULL, xfp, NULL, xdp,
-					 rb->prb_eval_progs[idx], &is_boolean,
-					 &bool_value, &is_missing);
+    char *str = xo_eval_prog_run_ctx(NULL, xfp, xdp, rb->prb_eval_progs[idx],
+				      &ctx, &is_boolean, &bool_value,
+				      &is_missing);
 
     int truth;
     if (is_missing)
@@ -2112,7 +2116,6 @@ pin_body_eval_test (pin_parse_t *parsep, pin_body_frame_t *bfp,
 	truth = (str != NULL && str[0] != '\0');
     free(str);
     pin_filter_set_esp(xfp, NULL);
-    pin_filter_set_position(xfp, 0, 0);
 
     return truth;
 }

@@ -75,6 +75,7 @@ typedef struct pin_rule_s {
     pin_name_id_t pr_pre_tag;	/* For PIA_WRAP: pre-emit element name (before the wrap) */
     pin_body_instr_id_t pr_body; /* First body instruction; null = use pr_action */
     pin_body_retain_t pr_body_retain; /* Retention class for the matched element */
+    uint8_t pr_reach;		/* XO_REACH_* mask of the op sequence's XPath */
 } pin_rule_t;
 
 /* Flags for pr_flags */

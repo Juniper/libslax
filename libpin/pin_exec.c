@@ -74,10 +74,9 @@ pin_exec_text_collect (pin_workspace_t *pwp, pin_node_t *nodep,
 }
 
 /*
- * Collect the text of the node at nid, intern the result in the
- * namepool, and return the atom.  An element gives its direct text
- * children; a fragment gives all its text.  Returns the null atom
- * when there is no text.
+ * Collect the string value of the node at nid (all its descendant
+ * text), intern it in the namepool, and return the atom.  Returns the
+ * null atom when there is no text.
  */
 pin_name_id_t
 pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
@@ -89,7 +88,7 @@ pin_exec_text_of (pin_workspace_t *pwp, pin_node_id_t nid)
     xo_buffer_t buf;
     xo_buf_init(&buf);
 
-    pin_exec_text_collect(pwp, nodep, &buf, nodep->pn_type == PIN_TYPE_ROOT);
+    pin_exec_text_collect(pwp, nodep, &buf, TRUE);
 
     pin_name_id_t result = pin_name_id_null_atom();
     if (xo_buf_offset(&buf) > 0) {
@@ -402,8 +401,23 @@ pin_op_emit (PIN_OP_FUNC_ARGS)
         }
     } else if (v.pv_type == PVT_STRING) {
         const char *str = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
-        if (str)
+        if (str && *str)
             pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
+    } else if (v.pv_type == PVT_BOOLEAN) {
+        const char *str = (v.pv_flags & PVF_TRUE) ? "true" : "false";
+        pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
+    } else if (v.pv_type == PVT_NODE) {
+        /* A node's string value is the text of its whole subtree */
+        pin_node_t *nodep = pin_node_addr(pwp, pin_node_id(v.pv_atom));
+        if (nodep) {
+            xo_buffer_t buf;
+            xo_buf_init(&buf);
+            pin_exec_text_collect(pwp, nodep, &buf, TRUE);
+            if (xo_buf_offset(&buf) > 0)
+                pin_insert_text(parsep, xo_buf_data(&buf, 0),
+                                xo_buf_offset(&buf), PIN_TYPE_TEXT);
+            xo_buf_cleanup(&buf);
+        }
     }
     return pin_value_null();
 }
@@ -503,11 +517,10 @@ pin_op_push_text (PIN_OP_FUNC_ARGS)
 
     const char *sel = pin_namepool_string(pwp, opp->po_name);
     size_t slen = sel ? strlen(sel) : 0;
-    pin_node_id_t target = pin_exec_node_at_path(pwp, ctx, sel ? sel : ".", slen ? slen : 1);
-    if (pin_node_id_is_null(target))
-        target = ctx;
-
-    pin_name_id_t result = pin_exec_text_of(pwp, target);
+    pin_node_id_t target = pin_exec_node_at_path(pwp, ctx, sel ? sel : ".",
+                                                 slen ? slen : 1);
+    pin_name_id_t result = pin_node_id_is_null(target)
+        ? pin_name_id_null_atom() : pin_exec_text_of(pwp, target);
     pin_exec_push(esp, pin_value_string(pin_name_id_atom_of(result)));
     return pin_value_null();
 }
@@ -1172,9 +1185,29 @@ pin_exec_apply_ops (pin_workspace_t *pwp, pin_rulebook_t *rb,
  * The next item of a loop, or the null atom when there are no more.
  * *pcp is set to the ops to run for it.
  */
+/*
+ * Does a child belong to a PEIK_CHILD or PEIK_APPLY loop?  An apply
+ * loop takes the children that have a template, and *pcp gets its ops.
+ */
+static pin_boolean_t
+pin_exec_iter_wants (pin_workspace_t *pwp, struct pin_parse_s *parsep,
+                     pin_exec_iter_t *iterp, pin_node_t *child,
+                     pin_op_id_t *pcp)
+{
+    if (child->pn_type != PIN_TYPE_ELT)
+        return FALSE;
+
+    if (iterp->pei_kind == PEIK_CHILD)
+        return pin_name_id_equal(child->pn_name, iterp->pei_name);
+
+    *pcp = pin_exec_apply_ops(pwp, parsep->pp_rulebook, iterp->pei_name,
+                              child);
+    return !pin_op_id_is_null(*pcp);
+}
+
 static pin_node_id_t
-pin_exec_iter_next (pin_exec_state_t *esp, struct pin_parse_s *parsep,
-                    pin_exec_iter_t *iterp, pin_op_id_t *pcp)
+pin_exec_iter_next_item (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                         pin_exec_iter_t *iterp, pin_op_id_t *pcp)
 {
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
 
@@ -1213,18 +1246,7 @@ pin_exec_iter_next (pin_exec_state_t *esp, struct pin_parse_s *parsep,
                 break;
 
             iterp->pei_next = child->pn_next;
-            if (child->pn_type != PIN_TYPE_ELT)
-                continue;
-
-            if (iterp->pei_kind == PEIK_CHILD) {
-                if (pin_name_id_equal(child->pn_name, iterp->pei_name))
-                    return cid;
-                continue;
-            }
-
-            *pcp = pin_exec_apply_ops(pwp, parsep->pp_rulebook,
-                                      iterp->pei_name, child);
-            if (!pin_op_id_is_null(*pcp))
+            if (pin_exec_iter_wants(pwp, parsep, iterp, child, pcp))
                 return cid;
         }
         iterp->pei_next = pin_node_id_null_atom();
@@ -1232,6 +1254,89 @@ pin_exec_iter_next (pin_exec_state_t *esp, struct pin_parse_s *parsep,
     }
 
     return pin_node_id_null_atom();
+}
+
+static pin_node_id_t
+pin_exec_iter_next (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                    pin_exec_iter_t *iterp, pin_op_id_t *pcp)
+{
+    pin_node_id_t item = pin_exec_iter_next_item(esp, parsep, iterp, pcp);
+    if (!pin_node_id_is_null(item))
+        iterp->pei_count += 1;
+
+    return item;
+}
+
+/*
+ * The loop's size, for last().  A child or apply loop counts what's
+ * left of its walk the first time it's asked.
+ */
+static uint32_t
+pin_exec_iter_size (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                    pin_exec_iter_t *iterp)
+{
+    if (iterp->pei_size != 0)
+        return iterp->pei_size;
+
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    uint32_t size = iterp->pei_count;
+
+    switch (iterp->pei_kind) {
+    case PEIK_NODESET:
+        size = esp->pes_nodesets[iterp->pei_ns].pne_count;
+        break;
+
+    case PEIK_CHILD:
+    case PEIK_APPLY:
+        for (pin_node_id_t cid = iterp->pei_next; !pin_node_id_is_null(cid); ) {
+            pin_node_t *child = pin_node_addr(pwp, cid);
+            if (child == NULL || child->pn_depth <= iterp->pei_depth)
+                break;
+
+            pin_op_id_t pc;
+            if (pin_exec_iter_wants(pwp, parsep, iterp, child, &pc))
+                size += 1;
+            cid = child->pn_next;
+        }
+        break;
+    }
+
+    iterp->pei_size = size;
+    return size;
+}
+
+/*
+ * The XPath context for an expression run in the top frame: its
+ * context node, and the position and size from the loop that gave
+ * that node.  A call keeps its caller's context, so the walk passes
+ * through call frames.  Outside any loop, the node is alone: 1 of 1.
+ */
+static void
+pin_exec_eval_ctx (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                   xo_eval_ctx_t *ctxp)
+{
+    int top = esp->pes_seq_top - 1;
+    pin_node_id_t ctx = esp->pes_seq[top].psf_context;
+
+    ctxp->xec_node = pin_filter_eval_node(ctx);
+    ctxp->xec_position = 1;
+    ctxp->xec_size = 1;
+
+    for (int i = top; i >= 0; i--) {
+        pin_exec_seq_frame_t *frame = &esp->pes_seq[i];
+        pin_exec_iter_t *iterp = frame->psf_iter;
+
+        if (iterp != NULL) {
+            if (pin_node_id_equal(frame->psf_context, ctx)) {
+                ctxp->xec_position = iterp->pei_count;
+                ctxp->xec_size = pin_exec_iter_size(esp, parsep, iterp);
+            }
+            break;
+        }
+
+        if (!frame->psf_is_call)
+            break;
+    }
 }
 
 static void
@@ -1405,6 +1510,8 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
         if (iterp->pei_kind == PEIK_NODESET)
             pin_exec_nodeset_free(esp, iterp->pei_ns);
 
+        iterp->pei_count = 0;
+        iterp->pei_size = key_seq;
         iterp->pei_kind = PEIK_SORTED;
         iterp->pei_tree = tree;
         iterp->pei_desc = primary_desc;
@@ -1768,9 +1875,10 @@ pin_op_eval (PIN_OP_FUNC_ARGS)
     }
 
     xo_filter_t *xfp = rb->prb_eval_xfp;
-    pin_node_id_t ctx = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
-    pin_filter_set_cur_node(xfp, ctx);
     pin_filter_set_esp(xfp, esp);
+
+    xo_eval_ctx_t ctx;
+    pin_exec_eval_ctx(esp, parsep, &ctx);
 
     /*
      * Reinstate this program's own namespace-binding snapshot before
@@ -1788,8 +1896,8 @@ pin_op_eval (PIN_OP_FUNC_ARGS)
     struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
 
     int is_boolean = 0, bool_value = 0, is_missing = 0;
-    char *str = xo_eval_prog_run_simple(NULL, xfp, NULL, xdp, prog,
-					 &is_boolean, &bool_value, &is_missing);
+    char *str = xo_eval_prog_run_ctx(NULL, xfp, xdp, prog, &ctx,
+				      &is_boolean, &bool_value, &is_missing);
 
     if (is_missing) {
 	result = pin_value_null();
@@ -2435,8 +2543,11 @@ pin_exec_dump_rules (pin_rulebook_t *prbp, pin_rule_id_t rid, FILE *out)
             break;
 
         pa_atom_t ridn = pa_fixed_atom_of(pin_rule_id_atom_of(rid));
-        fprintf(out, "    rule %u: action %u flags %#x\n",
-                (unsigned) ridn, rulep->pr_action, rulep->pr_flags);
+        fprintf(out, "    rule %u: action %u flags %#x reach %s%s%s\n",
+                (unsigned) ridn, rulep->pr_action, rulep->pr_flags,
+                rulep->pr_reach ? "" : "self",
+                (rulep->pr_reach & XO_REACH_SUBTREE) ? "subtree " : "",
+                (rulep->pr_reach & XO_REACH_SPINE) ? "spine" : "");
 
         if (!pin_op_id_is_null(rulep->pr_close_ops))
             pin_exec_dump_ops(prbp, rulep->pr_close_ops, out);

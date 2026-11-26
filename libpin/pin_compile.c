@@ -406,9 +406,7 @@ pin_compile_body_test (pin_rulebook_t *rb, const char *test)
     xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
     pin_filter_set_compile_ns(xfp, NULL, 0);
     pin_filter_clear_compile_error();
-    pin_filter_set_compile_position(xfp, TRUE);
     xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
-    pin_filter_set_compile_position(xfp, FALSE);
     if (prog == NULL)
 	return 0;
 
@@ -1856,6 +1854,7 @@ typedef struct pin_op_cursor_s {
     pin_name_id_t   poc_src_file; /* namepool atom for the source filename */
     uint32_t        poc_src_line; /* line number of the node being compiled */
     uint64_t        poc_complexity;  /* bitmask: bit (1<<type) set for each complex op present */
+    xo_eval_reach_t poc_reach;    /* XO_REACH_* mask of the expressions compiled */
     xmlNodePtr      poc_node;     /* current source node (for error messages) */
     int             poc_named;    /* compiling a named template's body */
     int             poc_multi_step; /* for-each may walk a multi-step path */
@@ -2154,8 +2153,11 @@ pin_classify_select (const char *s)
 	    ? SELK_VAR : SELK_COMPLEX;
     if (pin_is_numeric_literal(s))
         return SELK_NUMBER;
-    /* Downward: no absolute prefix, no upward steps, no predicates/funcs */
-    if (s[0] != '/' && strstr(s, "..") == NULL
+    /*
+     * Downward: no absolute prefix, no upward steps, no explicit axes,
+     * no predicates or functions
+     */
+    if (s[0] != '/' && strstr(s, "..") == NULL && strstr(s, "::") == NULL
 	    && strpbrk(s, " \t=<>'\"@[]()*") == NULL)
 	return SELK_DOWN;
     return SELK_COMPLEX;
@@ -2318,27 +2320,13 @@ pin_report_eval_fail (pin_op_cursor_t *cur, const char *expr)
 }
 
 /*
- * Is node inside an xsl:for-each?
- */
-static bool
-pin_node_in_for_each (xmlNodePtr node)
-{
-    for (xmlNodePtr np = node; np != NULL; np = np->parent) {
-	if (np->type == XML_ELEMENT_NODE && pin_is_xsl(np, "for-each"))
-	    return TRUE;
-    }
-
-    return FALSE;
-}
-
-/*
  * Compile expr as a full XPath expression via libxo's XPath parser and
  * xo_eval compiler, store the resulting program on the rulebook, and turn
  * *push (already allocated by the caller) into a PIN_OP_EVAL referencing
  * it.  po_name holds a plain array index into prb_eval_progs[] (see
  * pin_rulebook_eval_prog_add), not a namepool atom.  Returns 0 on success,
  * -1 on a parse/compile failure (reported via pin_error against the node
- * currently being compiled, unless it marks the body complex instead).
+ * currently being compiled).
  *
  * xo_filter_parse_expr() parses a full XPath expression (rather than
  * libxo's usual union of location paths) and returns its root, which
@@ -2358,28 +2346,28 @@ pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
 	return -1;
     }
 
+    /*
+     * A streaming parse keeps the context node's subtree and its
+     * ancestors' names and attributes, so anything past that can't be
+     * answered.
+     */
+    const char *why = NULL;
+    xo_eval_reach_t reach = xo_eval_reach(xdp, root, TRUE, &why, NULL, NULL);
+    if (reach & XO_REACH_OTHER) {
+	pin_error(cur->poc_rb, cur->poc_node,
+		  "XPath expression reaches outside the context node's "
+		  "subtree and ancestors (%s): %s",
+		  why ? why : "unknown", expr);
+	return -1;
+    }
+    cur->poc_reach |= reach;
+
     xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
     xo_filter_data_ops_t *ops = xo_filter_get_data_ops(xfp);
     pin_filter_set_compile_ns(xfp, cur->poc_ns_stack, cur->poc_ns_cur);
     pin_filter_clear_compile_error();
     xo_eval_prog_t *prog = xo_eval_compile(xdp, root, dp, ops);
     if (prog == NULL) {
-	/*
-	 * Op dispatch has no position() or last() to give.  In a match
-	 * template's for-each, BIA_FOR_EACH has them, so mark the body
-	 * complex and let it fall back there.
-	 */
-	if (!cur->poc_named && pin_node_in_for_each(cur->poc_node)) {
-	    pin_filter_set_compile_position(xfp, TRUE);
-	    prog = xo_eval_compile(xdp, root, dp, ops);
-	    pin_filter_set_compile_position(xfp, FALSE);
-	    if (prog != NULL) {
-		xo_eval_prog_destroy(prog);
-		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
-		return -1;
-	    }
-	}
-
 	pin_report_eval_fail(cur, expr);
 	return -1;
     }
@@ -2396,6 +2384,95 @@ pin_op_push_eval (pin_op_cursor_t *cur, pin_op_t *push, const char *expr)
     push->po_type = PIN_OP_EVAL;
     push->po_name = pin_name_id(idx);
     return 0;
+}
+
+/*
+ * Rewrite the AVT "avt" as one XPath expression in "out": literal text
+ * becomes a quoted string, and each "{expr}" becomes "string(expr)",
+ * all joined with concat().  Returns false, leaving the AVT to
+ * PIN_OP_PUSH_AVT, when every expression is a plain "@name" or "$name"
+ * (which that op handles without an XPath program), or when a literal
+ * holds both quote characters (XPath 1.0 has no escapes).
+ */
+static bool
+pin_avt_to_xpath (const char *avt, xo_buffer_t *out)
+{
+    xo_buffer_t lit;
+    bool complex = false;
+    int parts = 0;
+
+    xo_buf_init(&lit);
+    xo_buf_append_str(out, "concat(");
+
+    for (const char *cp = avt; ; ) {
+	if (*cp == '\0' || (cp[0] == '{' && cp[1] != '{')) {
+	    if (!xo_buf_is_empty(&lit)) {
+		xo_buf_force_nul(&lit);
+		const char *str = xo_buf_data(&lit, 0);
+		char quote = strchr(str, '\'') ? '"' : '\'';
+		if (strchr(str, quote)) {
+		    xo_buf_cleanup(&lit);
+		    return false;
+		}
+
+		if (parts > 0)
+		    xo_buf_append(out, ", ", 2);
+		xo_buf_append(out, &quote, 1);
+		xo_buf_append_str(out, str);
+		xo_buf_append(out, &quote, 1);
+		parts += 1;
+		xo_buf_reset(&lit);
+	    }
+	    if (*cp == '\0')
+		break;
+
+	    /* A brace inside a quoted string doesn't end the expression */
+	    const char *ep = cp + 1;
+	    char inq = '\0';
+	    for ( ; *ep; ep++) {
+		if (inq) {
+		    if (*ep == inq)
+			inq = '\0';
+		} else if (*ep == '\'' || *ep == '"') {
+		    inq = *ep;
+		} else if (*ep == '}') {
+		    break;
+		}
+	    }
+	    if (*ep != '}') {
+		xo_buf_cleanup(&lit);
+		return false;
+	    }
+
+	    size_t elen = (size_t) (ep - (cp + 1));
+	    if (!pin_expr_attr_or_var(cp + 1, elen))
+		complex = true;
+	    if (parts > 0)
+		xo_buf_append(out, ", ", 2);
+	    xo_buf_append_str(out, "string(");
+	    xo_buf_append(out, cp + 1, (ssize_t) elen);
+	    xo_buf_append(out, ")", 1);
+	    parts += 1;
+	    cp = ep + 1;
+
+	} else if ((cp[0] == '{' || cp[0] == '}') && cp[1] == cp[0]) {
+	    xo_buf_append(&lit, cp, 1);
+	    cp += 2;
+
+	} else {
+	    xo_buf_append(&lit, cp, 1);
+	    cp += 1;
+	}
+    }
+    xo_buf_cleanup(&lit);
+
+    /* concat() needs two arguments */
+    if (parts < 2)
+	xo_buf_append_str(out, ", ''");
+    xo_buf_append(out, ")", 1);
+    xo_buf_force_nul(out);
+
+    return complex;
 }
 
 /*
@@ -3127,6 +3204,7 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    pin_compile_ops_r(child, &sub);
 	    free(sub.poc_ns_stack);
 
+	    cur->poc_reach |= sub.poc_reach;
 	    if (sub.poc_complexity) {
 		cur->poc_complexity |= sub.poc_complexity;
 
@@ -3195,7 +3273,14 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    }
 
 	    int rc = 0;
-	    if (expr) {
+	    if (expr && pin_classify_select(expr) == SELK_SELF) {
+		/* The context node itself, so "$x/@a" can step from it */
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL)
+		    rc = -1;
+		else
+		    push->po_type = PIN_OP_PUSH_NODE;
+	    } else if (expr) {
 		if (pin_op_push_for_select(cur, expr) == NULL)
 		    rc = -1;
 	    } else if (pin_has_element_child(child)) {
@@ -3785,8 +3870,20 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 			pin_op_t *push_op = pin_op_new(cur, NULL);
 			if (push_op == NULL)
 			    return;
-			push_op->po_type = PIN_OP_PUSH_AVT;
-			push_op->po_name2 = avt_id;
+
+			xo_buffer_t xbuf;
+			xo_buf_init(&xbuf);
+			if (pin_avt_to_xpath(aval, &xbuf)) {
+			    int rc = pin_op_push_eval(cur, push_op,
+						      xo_buf_data(&xbuf, 0));
+			    xo_buf_cleanup(&xbuf);
+			    if (rc < 0)
+				return;
+			} else {
+			    xo_buf_cleanup(&xbuf);
+			    push_op->po_type = PIN_OP_PUSH_AVT;
+			    push_op->po_name2 = avt_id;
+			}
 
 			pin_op_t *attr_op = pin_op_new(cur, NULL);
 			if (attr_op == NULL)
@@ -3822,7 +3919,7 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 static pin_op_id_t
 pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 		      pin_name_id_t src_file_id, uint64_t *complexity_out,
-		      int named, int multi_step)
+		      xo_eval_reach_t *reach_out, int named, int multi_step)
 {
     pin_op_id_t head = pin_op_id_null_atom();
 
@@ -3836,6 +3933,8 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
     if (body_node->children == NULL) {
 	if (complexity_out)
 	    *complexity_out = 0;
+	if (reach_out)
+	    *reach_out = XO_REACH_SELF;
 	return head;
     }
 
@@ -3857,6 +3956,8 @@ pin_compile_ops (xmlNodePtr body_node, pin_rulebook_t *rb,
 
     if (complexity_out)
 	*complexity_out = cur.poc_complexity;
+    if (reach_out)
+	*reach_out = cur.poc_reach;
     return head;
 }
 
@@ -4110,7 +4211,7 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 	}
 	uint64_t complexity = 0;
 	pin_op_id_t ops = pin_compile_ops(child, rb, src_file_id, &complexity,
-					  1, 1);
+					  NULL, 1, 1);
 	int count = 0;
 
 	/*
@@ -4203,7 +4304,8 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
     if (stream_fe != NULL) {
 	uint64_t fe_complexity = 0;
 	pin_op_id_t fe_ops = pin_compile_ops(stream_fe, rb, src_file_id,
-					     &fe_complexity, 0, 0);
+					     &fe_complexity, &prp->pr_reach,
+					     0, 0);
 	if (fe_complexity == 0 && !pin_op_id_is_null(fe_ops)) {
 	    rb->prb_stream_fe = stream_fe;
 	    rb->prb_stream_ops = fe_ops;
@@ -4214,7 +4316,8 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
     uint64_t complexity = 0;
     if (!stream)
 	prp->pr_close_ops = pin_compile_ops(child, rb, src_file_id,
-					     &complexity, 0, call || readers);
+					     &complexity, &prp->pr_reach,
+					     0, call || readers);
 
     if (complexity == (1ULL << PIN_OP_APPLY) && call)
 	complexity = 0;

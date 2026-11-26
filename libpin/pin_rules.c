@@ -1021,8 +1021,12 @@ pin_rulebook_if_filter_add (pin_rulebook_t *prbp, xo_filter_t *xfp)
 xo_filter_t *
 pin_rulebook_get_eval_filter (pin_rulebook_t *prbp)
 {
-    if (prbp->prb_eval_xfp == NULL)
-	prbp->prb_eval_xfp = pin_filter_create(NULL, prbp->prb_workspace);
+    if (prbp->prb_eval_xfp == NULL) {
+	prbp->prb_eval_xfp = pin_filter_create_eval(NULL,
+						     prbp->prb_workspace);
+	if (prbp->prb_eval_xfp)
+	    pin_filter_set_rulebook(prbp->prb_eval_xfp, prbp);
+    }
     return prbp->prb_eval_xfp;
 }
 

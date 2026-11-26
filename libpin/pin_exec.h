@@ -193,6 +193,8 @@ typedef struct pin_exec_iter_s {
     uint32_t pei_pos;		/* PEIK_NODESET: next index in pei_ns */
     struct pin_stree_s *pei_tree; /* PEIK_SORTED: the items, by key */
     struct pin_stree_entry_s *pei_entry; /* PEIK_SORTED: next entry */
+    uint32_t pei_count;		/* Items given so far: the current position() */
+    uint32_t pei_size;		/* Number of items: last() (0 = not counted yet) */
 } pin_exec_iter_t;
 
 /* Values for pei_kind */
