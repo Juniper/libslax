@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.114.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Empty selections: a predicate that matches nothing, and an empty
+    for-each body; output after each must still appear.
+    Expected (one line):
+      <out><e>end</e></out>
+  -->
+
+  <xsl:template match="top">
+    <out>
+      <xsl:for-each select="g/t[@n = 9]"><x><xsl:value-of select="."/></x></xsl:for-each>
+      <xsl:copy-of select="g/t[@n = 9]"/>
+      <xsl:for-each select="g/t[@n = 2]"/>
+      <e>end</e>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

@@ -1,0 +1,18 @@
+compiled 1 pattern
+<out>
+   <a>a2</a>
+   <b>4</b>
+   <c>5</c>
+   <d>3</d>
+   <e>
+      <x>a3</x>
+   </e>
+   <f>
+      <x>1:a1</x>
+      <x>2:a3</x>
+      <x>3:b1</x>
+   </f>
+   <g>
+      <t n="3">a3</t>
+   </g>
+</out>

@@ -1,0 +1,22 @@
+compiled 2 patterns
+<out>
+   <p>
+      <x>a2</x>
+      <x>a3</x>
+   </p>
+   <s>
+      <x>a2</x>
+      <x>a1</x>
+   </s>
+   <m>
+      <x>1</x>
+      <x>3</x>
+   </m>
+   <p>
+      <x>b1</x>
+   </p>
+   <s/>
+   <m>
+      <x>5</x>
+   </m>
+</out>

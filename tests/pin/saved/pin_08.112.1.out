@@ -1,0 +1,27 @@
+compiled 2 patterns
+<out>
+   <p>
+      <x>a1</x>
+      <x>a2</x>
+      <x>a3</x>
+      <x>b1</x>
+   </p>
+   <q>
+      <x>a1</x>
+      <x>a2</x>
+      <x>a3</x>
+      <x>b1</x>
+   </q>
+   <r>
+      <t n="1">a1</t>
+      <t n="2">a2</t>
+      <t n="3">a3</t>
+      <t n="5">b1</t>
+   </r>
+   <s>
+      <t n="1">a1</t>
+      <t n="2">a2</t>
+      <t n="3">a3</t>
+      <t n="5">b1</t>
+   </s>
+</out>

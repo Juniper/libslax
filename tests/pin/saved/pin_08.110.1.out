@@ -1,0 +1,24 @@
+compiled 1 pattern
+<out>
+   <u>
+      <x>a1</x>
+      <x>u1</x>
+      <x>a2</x>
+      <x>a3</x>
+      <x>b1</x>
+   </u>
+   <c>
+      <t n="2">a2</t>
+      <u>u1</u>
+      <t n="5">b1</t>
+   </c>
+   <a n="5">
+      <x>t</x>
+      <x>u</x>
+      <x>t</x>
+      <x>t</x>
+   </a>
+   <p>
+      <x>G1</x>
+   </p>
+</out>

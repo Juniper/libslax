@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.109.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    for-each with predicate selects, which run as XPath expressions:
+    a comparison, a sort over a filtered set, and arithmetic, all
+    in a match template reached by apply-templates.
+    Expected (one line):
+      <out><p><x>a2</x><x>a3</x></p><s><x>a2</x><x>a1</x></s><m><x>1</x><x>3</x></m><p><x>b1</x></p><s/><m><x>5</x></m></out>
+  -->
+
+  <xsl:template match="top">
+    <out><xsl:apply-templates select="g"/></out>
+  </xsl:template>
+
+  <xsl:template match="g">
+    <p><xsl:for-each select="t[@n &gt; 1]"><x><xsl:value-of select="."/></x></xsl:for-each></p>
+    <s><xsl:for-each select="t[@n &lt; 3]"><xsl:sort select="." order="descending"/><x><xsl:value-of select="."/></x></xsl:for-each></s>
+    <m><xsl:for-each select="t[@n mod 2 = 1]"><x><xsl:value-of select="@n"/></x></xsl:for-each></m>
+  </xsl:template>
+</xsl:stylesheet>

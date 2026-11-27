@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.110.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Unions whose branches interleave come out in document order; a
+    positional predicate and a union copied with copy-of; copied attributes land on the open
+    element; a parent step selects back up the tree.
+    Expected (one line):
+      <out><u><x>a1</x><x>u1</x><x>a2</x><x>a3</x><x>b1</x></u><c><t n="2">a2</t><u>u1</u><t n="5">b1</t></c><a n="5"><x>t</x><x>u</x><x>t</x><x>t</x></a><p><x>G1</x></p></out>
+  -->
+
+  <xsl:template match="top">
+    <out>
+      <u><xsl:for-each select="g/t | g/u"><x><xsl:value-of select="."/></x></xsl:for-each></u>
+      <c><xsl:copy-of select="g/t[2]"/><xsl:copy-of select="g/u | g[2]/t"/></c>
+      <a><xsl:copy-of select="g[2]/t/@n"/><xsl:for-each select="g[1]/*"><x><xsl:value-of select="name()"/></x></xsl:for-each></a>
+      <p><xsl:for-each select="g/t[. = 'a2']/.."><x><xsl:value-of select="@id"/></x></xsl:for-each></p>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

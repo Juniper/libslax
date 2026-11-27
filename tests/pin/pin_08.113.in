@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.113.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    A node-set passed with with-param: count() and indexing in the
+    called template, and a for-each whose predicate uses a parameter.
+    Expected (one line):
+      <out><n>3</n><f>a2</f><e><x>a1</x><x>a2</x><x>a3</x></e><u>u1</u></out>
+  -->
+
+  <xsl:template match="top">
+    <out>
+      <xsl:call-template name="show">
+        <xsl:with-param name="set" select="g/t[@n &gt;= 2]"/>
+      </xsl:call-template>
+      <xsl:call-template name="each">
+        <xsl:with-param name="p" select="'a'"/>
+      </xsl:call-template>
+    </out>
+  </xsl:template>
+
+  <xsl:template name="show">
+    <xsl:param name="set"/>
+    <n><xsl:value-of select="count($set)"/></n>
+    <f><xsl:value-of select="$set[1]"/></f>
+  </xsl:template>
+
+  <xsl:template name="each">
+    <xsl:param name="p"/>
+    <e><xsl:for-each select="g/t[starts-with(., $p)]"><x><xsl:value-of select="."/></x></xsl:for-each></e>
+    <xsl:copy-of select="g/u"/>
+  </xsl:template>
+</xsl:stylesheet>

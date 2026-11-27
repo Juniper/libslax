@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.111.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    Node-set variables: indexing, count(), last(), a filtered copy of
+    a variable, for-each over a variable with position(), and copy-of
+    of a variable.
+    Expected (one line):
+      <out><a>a2</a><b>4</b><c>5</c><d>3</d><e><x>a3</x></e><f><x>1:a1</x><x>2:a3</x><x>3:b1</x></f><g><t n="3">a3</t></g></out>
+  -->
+
+  <xsl:template match="top">
+    <xsl:variable name="v" select="g/t"/>
+    <xsl:variable name="w" select="$v[@n &gt; 1]"/>
+    <xsl:variable name="s" select="g/t[3]"/>
+    <out>
+      <a><xsl:value-of select="$v[2]"/></a>
+      <b><xsl:value-of select="count($v)"/></b>
+      <c><xsl:value-of select="$v[last()]/@n"/></c>
+      <d><xsl:value-of select="count($w)"/></d>
+      <e><xsl:for-each select="$w[2]"><x><xsl:value-of select="."/></x></xsl:for-each></e>
+      <f><xsl:for-each select="$v[@n != 2]"><x><xsl:value-of select="concat(position(), ':', .)"/></x></xsl:for-each></f>
+      <g><xsl:copy-of select="$s"/></g>
+    </out>
+  </xsl:template>
+</xsl:stylesheet>

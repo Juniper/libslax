@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+# quiet dump clean xml pin_08.112.xml
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+
+  <!--
+    A downward path and the same path with a [true()] predicate take
+    different routes (a tree walk versus an XPath expression) and must
+    give the same output, in a match template and in a named one.
+    Expected (one line):
+      <out><p><x>a1</x><x>a2</x><x>a3</x><x>b1</x></p><q><x>a1</x><x>a2</x><x>a3</x><x>b1</x></q><r><t n="1">a1</t><t n="2">a2</t><t n="3">a3</t><t n="5">b1</t></r><s><t n="1">a1</t><t n="2">a2</t><t n="3">a3</t><t n="5">b1</t></s></out>
+  -->
+
+  <xsl:template match="top">
+    <out>
+      <p><xsl:for-each select="g/t"><x><xsl:value-of select="."/></x></xsl:for-each></p>
+      <q><xsl:for-each select="g/t[true()]"><x><xsl:value-of select="."/></x></xsl:for-each></q>
+      <xsl:call-template name="both"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template name="both">
+    <r><xsl:copy-of select="g/t"/></r>
+    <s><xsl:copy-of select="g/t[true()]"/></s>
+  </xsl:template>
+</xsl:stylesheet>
