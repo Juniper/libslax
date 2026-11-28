@@ -1430,14 +1430,29 @@ pin_for_each_build_key (pin_workspace_t *pwp, pin_node_id_t child_id,
 static pin_value_t
 pin_op_for_each (PIN_OP_FUNC_ARGS)
 {
-    if (pin_op_id_is_null(opp->po_alt))
-        return pin_value_null();
+    /*
+     * A stacked selection is a fresh slot from PIN_OP_EVAL_VALUE,
+     * which the loop owns.  Selecting anything but nodes is an error
+     * in XSLT; here it selects nothing.
+     */
+    uint32_t sel_ns = UINT32_MAX;
+    if (opp->po_count) {
+        pin_value_t v = pin_exec_pop(esp);
+        if (v.pv_type == PVT_NODESET)
+            sel_ns = v.pv_atom;
+        else if (v.pv_type != PVT_NULL)
+            psu_log("pin_exec: for-each: select is not a node-set");
+    }
 
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
     pin_node_id_t parent_id = esp->pes_seq[esp->pes_seq_top - 1].psf_context;
     pin_node_t *parent = pin_node_addr(pwp, parent_id);
-    if (parent == NULL)
+    if (pin_op_id_is_null(opp->po_alt) || parent == NULL
+            || (opp->po_count && sel_ns == UINT32_MAX)) {
+        if (sel_ns != UINT32_MAX)
+            pin_exec_nodeset_free(esp, sel_ns);
         return pin_value_null();
+    }
 
     const char *spec = pin_namepool_string(pwp, opp->po_name2);
     bool has_sort = (spec && *spec);
@@ -1465,7 +1480,10 @@ pin_op_for_each (PIN_OP_FUNC_ARGS)
      * needs all its items before the first one runs.
      */
     const char *path = pin_namepool_string(pwp, opp->po_name);
-    if (path && strchr(path, '/') != NULL) {
+    if (sel_ns != UINT32_MAX) {
+        iterp->pei_ns = sel_ns;
+        iterp->pei_kind = PEIK_NODESET;
+    } else if (path && strchr(path, '/') != NULL) {
         iterp->pei_ns = pin_exec_nodeset_alloc(esp);
         if (iterp->pei_ns == UINT32_MAX) {
             free(iterp);
@@ -1615,6 +1633,14 @@ pin_exec_emit_node (pin_parse_t *parsep, pin_workspace_t *pwp,
 
         pin_insert_close(parsep, NULL, tag);
 
+    } else if (nodep->pn_type == PIN_TYPE_ATTRIB) {
+        /* A copied attribute goes on the open output element */
+        const char *aname = pin_namepool_string(pwp, nodep->pn_name);
+        const char *aval = pin_textpool_string(pwp,
+                pa_arb_atom_of(pin_node_text(nodep)));
+        if (aname)
+            pin_insert_attrib_pair(parsep, aname, aval ? aval : "");
+
     } else if (nodep->pn_type == PIN_TYPE_TEXT
             || nodep->pn_type == PIN_TYPE_UNESC) {
         const char *text = pin_textpool_string(pwp,
@@ -1667,6 +1693,48 @@ pin_exec_emit_subtree (pin_parse_t *parsep, pin_node_id_t src_id,
     pin_exec_emit_node(parsep, pwp, src_id);
 }
 
+/*
+ * Copy a value to the output, as xsl:copy-of does: a node-set is
+ * deep-copied node by node; any other value is converted to its
+ * string value and inserted as a text node.
+ */
+static void
+pin_exec_copy_value (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+                     pin_value_t v, pin_depth_t stop_depth)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    const char *str = NULL;
+
+    switch (v.pv_type) {
+    case PVT_NODESET:
+        if (v.pv_atom < (uint32_t) esp->pes_nodeset_count) {
+            pin_ns_entry_t *nsp = &esp->pes_nodesets[v.pv_atom];
+            for (uint32_t i = 0; i < nsp->pne_count; i++)
+                pin_exec_emit_subtree(parsep, pin_node_id(nsp->pne_nodes[i]),
+                                      stop_depth);
+        }
+        break;
+
+    case PVT_NODE:
+        pin_exec_emit_subtree(parsep, pin_node_id(v.pv_atom), stop_depth);
+        break;
+
+    case PVT_STRING:
+        str = pin_namepool_string(pwp, pin_name_id(v.pv_atom));
+        break;
+
+    case PVT_BOOLEAN:
+        str = (v.pv_flags & PVF_TRUE) ? "true" : "false";
+        break;
+
+    default:
+        break;
+    }
+
+    if (str && *str)
+        pin_insert_text(parsep, str, strlen(str), PIN_TYPE_TEXT);
+}
+
 static pin_value_t
 pin_op_copy_of (PIN_OP_FUNC_ARGS)
 {
@@ -1675,73 +1743,38 @@ pin_op_copy_of (PIN_OP_FUNC_ARGS)
     pin_node_t *ctx_node = pin_node_addr(pwp, ctx);
     pin_depth_t stop_depth = ctx_node ? ctx_node->pn_depth - 1 : 0;
 
-    /* Build the source nodeset */
-    const char *path = pin_namepool_string(pwp, opp->po_name);
-    uint32_t ns_idx = UINT32_MAX;
-    int free_ns = 0;
+    /* A stacked value is a fresh slot from PIN_OP_EVAL_VALUE */
+    if (opp->po_count) {
+        pin_value_t v = pin_exec_pop(esp);
+        pin_exec_copy_value(esp, parsep, v, stop_depth);
+        if (v.pv_type == PVT_NODESET)
+            pin_exec_nodeset_free(esp, v.pv_atom);
+        return pin_value_null();
+    }
 
+    const char *path = pin_namepool_string(pwp, opp->po_name);
     if (path && path[0] == '$') {
-        /* Variable reference: resolve from var table */
         pin_name_id_t vname = pin_namepool_atom(pwp, path + 1, FALSE);
         pin_var_binding_t *vp = pin_exec_var_find(esp,
                 pin_name_id_atom_of(vname));
-        if (vp) {
-            /*
-             * Per XSLT 1.0 copy-of semantics: a node-set is deep-copied
-             * node by node; any other value type is converted to its
-             * string value and inserted as a single text node.
-             */
-            switch (vp->pvb_value.pv_type) {
-            case PVT_NODESET:
-                ns_idx = vp->pvb_value.pv_atom;
-                break;
-            case PVT_NODE:
-                pin_exec_emit_subtree(parsep,
-                        pin_node_id(vp->pvb_value.pv_atom), stop_depth);
-                return pin_value_null();
-            case PVT_STRING: {
-                const char *s = pin_namepool_string(pwp,
-                        pin_name_id(vp->pvb_value.pv_atom));
-                if (s && *s)
-                    pin_insert_text(parsep, s, strlen(s), PIN_TYPE_TEXT);
-                return pin_value_null();
-            }
-            case PVT_BOOLEAN: {
-                const char *s = (vp->pvb_value.pv_flags & PVF_TRUE)
-                        ? "true" : "false";
-                pin_insert_text(parsep, s, strlen(s), PIN_TYPE_TEXT);
-                return pin_value_null();
-            }
-            default:
-                break;
-            }
-        }
-    } else {
-        /* Path or null (meaning "."): collect into ephemeral nodeset */
-        ns_idx = pin_exec_nodeset_alloc(esp);
-        if (ns_idx != UINT32_MAX) {
-            free_ns = 1;
-            if (path && path[0] != '\0' && strcmp(path, ".") != 0) {
-                pin_exec_collect_path(pwp, esp, ctx,
-                        path, strlen(path), ns_idx);
-            } else {
-                pin_exec_nodeset_append(esp, ns_idx,
-                        pa_fixed_atom_of(pin_node_id_atom_of(ctx)));
-            }
-        }
+        if (vp)
+            pin_exec_copy_value(esp, parsep, vp->pvb_value, stop_depth);
+        return pin_value_null();
     }
 
-    if (ns_idx != UINT32_MAX && ns_idx < (uint32_t) esp->pes_nodeset_count) {
-        pin_ns_entry_t *nsp = &esp->pes_nodesets[ns_idx];
-        for (uint32_t i = 0; i < nsp->pne_count; i++) {
-            pin_node_id_t nid = pin_node_id(nsp->pne_nodes[i]);
-            pin_exec_emit_subtree(parsep, nid, stop_depth);
-        }
-    }
+    /* Path or null (meaning "."): collect into an ephemeral nodeset */
+    uint32_t ns_idx = pin_exec_nodeset_alloc(esp);
+    if (ns_idx == UINT32_MAX)
+        return pin_value_null();
 
-    if (free_ns && ns_idx != UINT32_MAX)
-        pin_exec_nodeset_free(esp, ns_idx);
+    if (path && path[0] != '\0' && strcmp(path, ".") != 0)
+        pin_exec_collect_path(pwp, esp, ctx, path, strlen(path), ns_idx);
+    else
+        pin_exec_nodeset_append(esp, ns_idx,
+                                pa_fixed_atom_of(pin_node_id_atom_of(ctx)));
 
+    pin_exec_copy_value(esp, parsep, pin_value_nodeset(ns_idx), stop_depth);
+    pin_exec_nodeset_free(esp, ns_idx);
     return pin_value_null();
 }
 
@@ -1850,6 +1883,40 @@ pin_op_call (PIN_OP_FUNC_ARGS)
 }
 
 /*
+ * Get PIN_OP_EVAL's program ready to run: point the shared filter at
+ * this exec state and this program's own namespace bindings, and fill
+ * in the context triple.  Returns NULL when there's nothing to run.
+ */
+static xo_eval_prog_t *
+pin_exec_eval_setup (pin_exec_state_t *esp, struct pin_parse_s *parsep,
+		     pin_op_t *opp, xo_eval_ctx_t *ctxp)
+{
+    pin_rulebook_t *rb = parsep->pp_rulebook;
+    uint32_t idx = pin_name_id_atom_of(opp->po_name);
+    xo_eval_prog_t *prog = (idx < rb->prb_eval_prog_count)
+			  ? rb->prb_eval_progs[idx] : NULL;
+
+    if (prog == NULL || rb->prb_eval_xfp == NULL)
+	return NULL;
+
+    xo_filter_t *xfp = rb->prb_eval_xfp;
+    pin_filter_set_esp(xfp, esp);
+    pin_exec_eval_ctx(esp, parsep, ctxp);
+
+    /*
+     * xfdo_find_function is consulted again at run time for a prefixed
+     * call, and prb_eval_xfp is shared by every program in the
+     * rulebook, so each run needs its own program's bindings back.
+     */
+    uint32_t ns_count = 0;
+    const pin_ns_map_t *ns_bindings = pin_rulebook_eval_prog_ns(rb, idx,
+								   &ns_count);
+    pin_filter_set_compile_ns(xfp, ns_bindings, ns_count);
+
+    return prog;
+}
+
+/*
  * Run the compiled xo_eval_prog_t that po_name indexes into
  * parsep->pp_rulebook's prb_eval_progs[] (a plain array index, not a
  * namepool atom -- see pin_rulebook_eval_prog_add) against the current
@@ -1863,36 +1930,16 @@ static pin_value_t
 pin_op_eval (PIN_OP_FUNC_ARGS)
 {
     pin_workspace_t *pwp = pin_parse_workspace(parsep);
-    pin_rulebook_t *rb = parsep->pp_rulebook;
-    uint32_t idx = pin_name_id_atom_of(opp->po_name);
-    xo_eval_prog_t *prog = (idx < rb->prb_eval_prog_count)
-			  ? rb->prb_eval_progs[idx] : NULL;
-
+    xo_eval_ctx_t ctx;
+    xo_eval_prog_t *prog = pin_exec_eval_setup(esp, parsep, opp, &ctx);
     pin_value_t result = pin_value_null();
-    if (prog == NULL || rb->prb_eval_xfp == NULL) {
+
+    if (prog == NULL) {
 	pin_exec_push(esp, result);
 	return pin_value_null();
     }
 
-    xo_filter_t *xfp = rb->prb_eval_xfp;
-    pin_filter_set_esp(xfp, esp);
-
-    xo_eval_ctx_t ctx;
-    pin_exec_eval_ctx(esp, parsep, &ctx);
-
-    /*
-     * Reinstate this program's own namespace-binding snapshot before
-     * running it: xfdo_find_function (pin_filter_find_function) is
-     * re-consulted at runtime for any "slax:"/"bit:"-style call compiled
-     * into this program, and prb_eval_xfp is shared by every PIN_OP_EVAL
-     * program in the rulebook, so without this each run would see
-     * whichever program compiled last, rather than its own bindings.
-     */
-    uint32_t ns_count = 0;
-    const pin_ns_map_t *ns_bindings = pin_rulebook_eval_prog_ns(rb, idx,
-								   &ns_count);
-    pin_filter_set_compile_ns(xfp, ns_bindings, ns_count);
-
+    xo_filter_t *xfp = parsep->pp_rulebook->prb_eval_xfp;
     struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
 
     int is_boolean = 0, bool_value = 0, is_missing = 0;
@@ -1910,6 +1957,55 @@ pin_op_eval (PIN_OP_FUNC_ARGS)
     if (str != NULL)
 	free(str);
 
+    pin_exec_push(esp, result);
+    return pin_value_null();
+}
+
+/*
+ * PIN_OP_EVAL for a value that's kept rather than written: a variable,
+ * a parameter, or the selection of a for-each or copy-of.  A node-set
+ * stays a node-set, so "$v[2]" and "count($v)" see its nodes.
+ */
+static pin_value_t
+pin_op_eval_value (PIN_OP_FUNC_ARGS)
+{
+    pin_workspace_t *pwp = pin_parse_workspace(parsep);
+    xo_eval_ctx_t ctx;
+    xo_eval_prog_t *prog = pin_exec_eval_setup(esp, parsep, opp, &ctx);
+    pin_value_t result = pin_value_null();
+
+    if (prog == NULL) {
+	pin_exec_push(esp, result);
+	return pin_value_null();
+    }
+
+    xo_filter_t *xfp = parsep->pp_rulebook->prb_eval_xfp;
+    struct xo_xparse_data_s *xdp = xo_filter_xparse_data(NULL, xfp);
+    char *str = NULL;
+    xo_eval_ext_value_t rv = xo_eval_prog_run_value(NULL, xfp, xdp, prog,
+						     &ctx, &str);
+
+    switch (rv.xee_type) {
+    case XO_EVAL_EXT_NODESET:;
+	uint32_t ns_idx = pin_filter_ns_take(xfp, rv.xee_ns);
+	if (ns_idx != UINT32_MAX)
+	    result = pin_value_nodeset(ns_idx);
+	break;
+
+    case XO_EVAL_EXT_BOOLEAN:
+	result = pin_value_bool(rv.xee_bool);
+	break;
+
+    case XO_EVAL_EXT_STRING:;
+	pin_name_id_t atom = pin_namepool_atom(pwp, str, TRUE);
+	result = pin_value_string(pin_name_id_atom_of(atom));
+	break;
+
+    default:
+	break;
+    }
+
+    free(str);
     pin_exec_push(esp, result);
     return pin_value_null();
 }
@@ -2252,6 +2348,7 @@ pin_op_def_t pin_op_table[PIN_OP_MAX] = {
     [PIN_OP_APPEND_VALUE]  = { "append-value",  pin_op_append_value,  0 },
     [PIN_OP_APPEND_CLOSE]  = { "append-close",  pin_op_append_close,  0 },
     [PIN_OP_SET_VAR]       = { "set-var",       pin_op_set_var,       0 },
+    [PIN_OP_EVAL_VALUE]    = { "eval-value",    pin_op_eval_value,    0 },
 };
 
 /*

@@ -117,7 +117,8 @@ typedef uint16_t pin_op_type_t;
 #define PIN_OP_APPEND_VALUE  (PIN_OP_MAX_COMPLEX + 39) /* Pop a value and send it to the output, as an mvar append does */
 #define PIN_OP_APPEND_CLOSE  (PIN_OP_MAX_COMPLEX + 40) /* End the append */
 #define PIN_OP_SET_VAR       (PIN_OP_MAX_COMPLEX + 41) /* Pop top; assign to the visible variable po_name */
-#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 42) /* Sentinel: number of defined op codes */
+#define PIN_OP_EVAL_VALUE    (PIN_OP_MAX_COMPLEX + 42) /* PIN_OP_EVAL, but a node-set result is pushed as PVT_NODESET */
+#define PIN_OP_MAX           (PIN_OP_MAX_COMPLEX + 43) /* Sentinel: number of defined op codes */
 
 /*
  * Compiled op node (stored in prb_ops pa_fixed pool)
@@ -127,7 +128,8 @@ typedef struct pin_op_s {
     pin_op_id_t    po_next;      /* Next op in sequence; null = end of list */
     pin_op_id_t    po_alt;       /* Branch target: IF false / GOTO / join */
     pin_op_type_t  po_type;      /* Opcode -- index into pin_op_table[] */
-    uint16_t       po_count;     /* CALL: number of preceding WITH_PARAM ops */
+    uint16_t       po_count;     /* CALL: number of preceding WITH_PARAM ops;
+				    FOR_EACH, COPY_OF: 1 = pop the selection */
     pin_name_id_t  po_name;      /* Primary operand: tag / attr / string atom */
     pin_name_id_t  po_name2;     /* Secondary operand (e.g. attribute value) */
     pin_name_id_t  po_src_file;  /* Namepool atom: source XSLT filename */

@@ -630,6 +630,28 @@ pin_filter_ns_copy (xo_filter_data_t *dp, xo_eval_ns_t ns)
     return ns;
 }
 
+uint32_t
+pin_filter_ns_take (xo_filter_t *xfp, uint32_t ns)
+{
+    xo_filter_data_t *dp = xo_filter_get_data_ptr(xfp);
+    pin_exec_state_t *esp = dp ? dp->xfd_esp : NULL;
+    pin_filter_ns_t *nsp = dp ? pin_filter_ns_addr(dp, ns) : NULL;
+    uint32_t idx = UINT32_MAX;
+
+    if (esp && nsp) {
+	idx = pin_exec_nodeset_alloc(esp);
+	for (uint32_t i = 0; idx != UINT32_MAX && i < nsp->pfn_count; i++) {
+	    uint32_t atom = pa_fixed_atom_of(
+		    pin_node_id_atom_of(nsp->pfn_nodes[i]));
+	    pin_exec_nodeset_append(esp, idx, atom);
+	}
+    }
+
+    if (dp)
+	pin_filter_ns_free(dp, ns);
+    return idx;
+}
+
 /*
  * The node test for one step.  The principal node type is attribute
  * on the attribute axis and element everywhere else, so "*" and a

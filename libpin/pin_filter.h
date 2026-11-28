@@ -108,6 +108,14 @@ void
 pin_filter_set_esp (xo_filter_t *xfp, pin_exec_state_t *esp);
 
 /*
+ * Move the eval filter's node-set 'ns' into the exec state's node-set
+ * table, so it can sit on the value stack or in a variable.  'ns' is
+ * freed either way.  Returns the new slot, or UINT32_MAX.
+ */
+uint32_t
+pin_filter_ns_take (xo_filter_t *xfp, uint32_t ns);
+
+/*
  * Set the rulebook whose global variables back $name references that
  * no local binding answers.
  */

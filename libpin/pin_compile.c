@@ -2567,7 +2567,11 @@ pin_op_push_for_select (pin_op_cursor_t *cur, const char *sel)
 	return push;
     }
 
-    return pin_op_push_for_test(cur, sel);
+    /* The value is kept, so a node-set must stay one */
+    pin_op_t *push = pin_op_push_for_test(cur, sel);
+    if (push && push->po_type == PIN_OP_EVAL)
+	push->po_type = PIN_OP_EVAL_VALUE;
+    return push;
 }
 
 /*
@@ -2852,14 +2856,21 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		continue;
 	    }
 
+	    /* Anything else is an XPath expression, copied from the stack */
 	    if (kind == SELK_COMPLEX) {
-		/* Fall back to stub */
-		cur->poc_complexity |= (1ULL << PIN_OP_PUSH_NODE);
 		pin_op_t *push = pin_op_new(cur, NULL);
-		if (push)
-		    push->po_type = PIN_OP_PUSH_NODE;
-		if (sel)
+		if (push == NULL || pin_op_push_eval(cur, push, s) < 0) {
 		    xmlFree(sel);
+		    return;
+		}
+		push->po_type = PIN_OP_EVAL_VALUE;
+		xmlFree(sel);
+
+		pin_op_t *copy = pin_op_new(cur, NULL);
+		if (copy == NULL)
+		    return;
+		copy->po_type = PIN_OP_COPY_OF;
+		copy->po_count = 1;
 		continue;
 	    }
 
@@ -3144,18 +3155,19 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 	    const char *s = (const char *) sel;
 
 	    /*
-	     * Only downward element paths ("a", "a/b/c"; no predicates,
-	     * wildcards, attributes, or axes): pin_op_for_each walks the
-	     * retained subtree child-by-child, one step at a time.  A
-	     * multi-step path is only taken when poc_multi_step is set: in
-	     * a named template's body, or in a match template that buffers
-	     * anyway (see pin_count_readers()).  Otherwise a match template
-	     * falls back to BIA_ for it, whose BIA_FOR_EACH streams the path
-	     * when it can (see pin_template_stream_foreach()).
+	     * A downward element path ("a", "a/b/c") is walked by
+	     * pin_op_for_each itself.  A multi-step one is only taken when
+	     * poc_multi_step is set: in a named template's body, or in a
+	     * match template that buffers anyway (see pin_count_readers()).
+	     * Otherwise a match template falls back to BIA_ for it, whose
+	     * BIA_FOR_EACH streams the path when it can (see
+	     * pin_template_stream_foreach()).  Any other select is an XPath
+	     * expression, run by PIN_OP_EVAL_VALUE, whose node-set the
+	     * for-each takes from the value stack.
 	     */
-	    if (pin_classify_select(s) != SELK_DOWN
-		    || strpbrk(s, ".:") != NULL
-		    || (!cur->poc_multi_step && strchr(s, '/') != NULL)) {
+	    bool walk = (pin_classify_select(s) == SELK_DOWN
+			 && strpbrk(s, ".:") == NULL);
+	    if (walk && !cur->poc_multi_step && strchr(s, '/') != NULL) {
 		cur->poc_complexity |= (1ULL << PIN_OP_COMPLEX_EXPR);
 		xmlFree(sel);
 		continue;
@@ -3174,7 +3186,16 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		continue;
 	    }
 
-	    /* Allocate PIN_OP_FOR_EACH op */
+	    if (!walk) {
+		pin_op_t *push = pin_op_new(cur, NULL);
+		if (push == NULL || pin_op_push_eval(cur, push, s) < 0) {
+		    xo_buf_cleanup(&spec);
+		    xmlFree(sel);
+		    return;
+		}
+		push->po_type = PIN_OP_EVAL_VALUE;
+	    }
+
 	    pin_op_t *fe = pin_op_new(cur, NULL);
 	    if (fe == NULL) {
 		xo_buf_cleanup(&spec);
@@ -3182,7 +3203,10 @@ pin_compile_ops_r (xmlNodePtr body_node, pin_op_cursor_t *cur)
 		continue;
 	    }
 	    fe->po_type = PIN_OP_FOR_EACH;
-	    fe->po_name = pin_namepool_atom(pwp, s, TRUE);
+	    if (walk)
+		fe->po_name = pin_namepool_atom(pwp, s, TRUE);
+	    else
+		fe->po_count = 1;
 	    if (!xo_buf_is_empty(&spec)) {
 		xo_buf_force_nul(&spec);
 		fe->po_name2 = pin_namepool_atom(pwp, xo_buf_data(&spec, 0), TRUE);
@@ -4216,25 +4240,15 @@ pin_compile_template (xmlNodePtr child, xmlDocPtr docp, xo_filter_t *xfp UNUSED,
 
 	/*
 	 * Named templates have no BIA_ fallback: only match-based templates
-	 * get one (see below).  PIN_OP_APPLY is exempt from this check: it
-	 * now has a real op-engine implementation (pin_op_apply, matching
-	 * retained children against the apply-templates rule index), so a
-	 * named template whose only complexity source is apply-templates
-	 * compiles and runs like any other op sequence.  Literal and number
-	 * copy-of, downward-path for-each and text/number sorts are op
-	 * dispatchable now; what's left is a general node-set expression
-	 * (copy-of's PUSH_NODE stub, or COMPLEX_EXPR from a for-each
-	 * select or sort key with a variable, function call, predicate,
-	 * wildcard or non-child axis).  Those still can't be compiled as
-	 * a plain op sequence, so reject them instead of silently
-	 * registering nothing and leaving every call to it a silent no-op
-	 * at runtime.
+	 * get one (see below).  apply-templates runs here as pin_op_apply,
+	 * and select expressions run as PIN_OP_EVAL_VALUE, so what's left
+	 * is a sort key pin_compile_sort_spec() can't handle.  Reject it,
+	 * rather than registering nothing and leaving every call to the
+	 * template a silent no-op.
 	 */
 	if (complexity & ~(1ULL << PIN_OP_APPLY)) {
 	    pin_error(rb, child,
-		      "xsl:template name=\"%s\": copy-of or for-each "
-		      "select (or a sort key) needs a node-set expression, "
-		      "which named templates do not support yet",
+		      "xsl:template name=\"%s\": unsupported xsl:sort key",
 		      (const char *) tname);
 	} else if (!pin_op_id_is_null(ops)) {
 	    pin_name_id_t nid = pin_namepool_atom(rb->prb_workspace,
